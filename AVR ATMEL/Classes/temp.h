@@ -19,7 +19,8 @@ private:
 		CONVERT_TEMPERATURE = 0x44,
 		READ_SCRATCHPAD     = 0xBE
 	};
-	uint8_t crc8( uint8_t* data, uint8_t length );
+	static uint8_t crc8( uint8_t* data, uint8_t length );
+	static uint8_t pinNumber;
 public:
 	
 	enum ACCURACY 
@@ -32,14 +33,14 @@ public:
 	
 public:
 		DS18B20(); 
-		static void init_temp(); 
-		void checkready_temperature(); 
-		void write_bit(uint8_t byte); 
-		void write_byte (uint8_t byte); 
-		uint8_t read_bit(); 
-		uint8_t read_byte(); 
-		void measure();
-		bool get_temperature(uint64_t address=0, float *temperature=0);
+		static void init_temp(uint8_t _pinNumber); 
+		static bool checkready_temperature(); 
+		static void write_bit(uint8_t byte); 
+		static void write_byte (uint8_t byte); 
+		static uint8_t read_bit(); 
+		static uint8_t read_byte(); 
+		static bool measure();
+		static bool get_temperature(uint64_t address=0, float *temperature=0);
 		void set_accuracy( enum ACCURACY accuracy );
 		uint64_t get_address();
 };

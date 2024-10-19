@@ -40,20 +40,35 @@
         </dependencies>
       </framework-data>
     </AsfFrameworkConfig>
-    <avrtool>custom</avrtool>
+    <avrtool>com.atmel.avrdbg.tool.simulator</avrtool>
     <avrtoolserialnumber />
     <avrdeviceexpectedsignature>0x1E9403</avrdeviceexpectedsignature>
     <custom>
+      <ToolOptions>
+        <InterfaceProperties>
+        </InterfaceProperties>
+        <InterfaceName>
+        </InterfaceName>
+      </ToolOptions>
+      <ToolType>custom</ToolType>
+      <ToolNumber>
+      </ToolNumber>
+      <ToolName>Custom Programming Tool</ToolName>
+    </custom>
+    <CustomProgrammingToolCommand>avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"AVR ATMEL.hex":i</CustomProgrammingToolCommand>
+    <avrtoolinterface />
+    <com_atmel_avrdbg_tool_simulator>
       <ToolOptions xmlns="">
         <InterfaceProperties>
         </InterfaceProperties>
+        <InterfaceName>
+        </InterfaceName>
       </ToolOptions>
-      <ToolType xmlns="">custom</ToolType>
+      <ToolType xmlns="">com.atmel.avrdbg.tool.simulator</ToolType>
       <ToolNumber xmlns="">
       </ToolNumber>
-      <ToolName xmlns="">Custom Programming Tool</ToolName>
-    </custom>
-    <CustomProgrammingToolCommand>avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"AVR ATMEL.hex":i</CustomProgrammingToolCommand>
+      <ToolName xmlns="">Simulator</ToolName>
+    </com_atmel_avrdbg_tool_simulator>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -123,6 +138,7 @@
         <avrgcc.compiler.symbols.DefSymbols>
           <ListValues>
             <Value>DEBUG</Value>
+            <Value>F_CPU=1000000</Value>
           </ListValues>
         </avrgcc.compiler.symbols.DefSymbols>
         <avrgcc.compiler.directories.IncludePaths>
@@ -187,7 +203,19 @@
     <Compile Include="Classes\uart.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="pins.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="user_error.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="user_error.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="user_types.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

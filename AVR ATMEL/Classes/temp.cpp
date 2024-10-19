@@ -8,35 +8,55 @@
 #include <util/delay.h>
 #include <avr/io.h>
 #include "temp.h"
+#include "uart.h"
 
 #include <stdlib.h>
 
-#define TEMPERATURE PB3
+#define TEMP_PORT_DDR  DDRB
+#define TEMP_PORT_PORT PORTB
+ 
+uint8_t DS18B20::pinNumber = 0;
 
-void DS18B20 :: init_temp()
+void DS18B20 :: init_temp( uint8_t _pinNumber )
 {
-	DDRB &= ~(1 << TEMPERATURE);
-	PORTB &= ~(1 << TEMPERATURE);
+	pinNumber = _pinNumber;
+	TEMP_PORT_DDR &= ~(1 << pinNumber);
+	TEMP_PORT_PORT &= ~(1 << pinNumber);
 }
 
-void DS18B20 :: checkready_temperature()
+bool DS18B20 :: checkready_temperature()
 {
-	while(PINB & (1 << TEMPERATURE))
+	
+	TEMP_PORT_DDR |= 1 << pinNumber; // устанавливаем шину в ноль
+	_delay_us(490);
+	TEMP_PORT_DDR &= ~(1 << pinNumber); // отпускаeм шину
+	_delay_us(70);
+	
+	if( ! ( PINB & (1 << pinNumber) ) ) // Шина в нуле после отпускания, есть устройства
+	{	
+		return true;
+	}
+	
+	while(PINB & (1 << pinNumber))
 	{
-		DDRB |= 1 << TEMPERATURE; // опускаем шину
+		TEMP_PORT_DDR |= 1 << pinNumber; // устанавливаем шину в ноль
 		_delay_us(490);
-		DDRB &= ~(1 << TEMPERATURE); // отпускаeм шину
+		TEMP_PORT_DDR &= ~(1 << pinNumber); // отпускаeм шину
 		_delay_us(70);
 	}
+	
 	_delay_us(490);
+	
+	return false;
+	
 }
 
 void DS18B20 :: write_bit(uint8_t bit)
 {
 	switch(bit)
 	{
-		case 0: DDRB |= 1 << TEMPERATURE; _delay_us(60); DDRB &= ~(1 << TEMPERATURE); break;
-		case 1: DDRB |= 1 << TEMPERATURE; _delay_us(15); DDRB &= ~(1 << TEMPERATURE); _delay_us(45); break;
+		case 0: TEMP_PORT_DDR |= 1 << pinNumber; _delay_us(60); TEMP_PORT_DDR &= ~(1 << pinNumber); break;
+		case 1: TEMP_PORT_DDR |= 1 << pinNumber; _delay_us(15); TEMP_PORT_DDR &= ~(1 << pinNumber); _delay_us(45); break;
 	}
 	_delay_us(10);
 }
@@ -61,12 +81,12 @@ void DS18B20 :: write_byte (uint8_t byte)
 
 uint8_t DS18B20 :: read_bit()
 {
-	DDRB |= 1 << TEMPERATURE;
+	TEMP_PORT_DDR |= 1 << pinNumber;
 	_delay_us(2);
-	DDRB &= ~(1 << TEMPERATURE);
+	TEMP_PORT_DDR &= ~(1 << pinNumber);
 	_delay_us(4);
 	
-	if(PINB & 1<< TEMPERATURE)
+	if(PINB & 1<< pinNumber)
 	{
 		_delay_us(61);
 		return 1;
@@ -93,17 +113,18 @@ uint8_t DS18B20 :: read_byte()
 	return read_byte;
 }
 
-void DS18B20::measure()
+bool DS18B20::measure()
 {
 	
 	// Запуск измерения температуры
 	
-	checkready_temperature();
+	bool retVal = checkready_temperature();
 	
 	write_byte(SKIP_ROM);
 	write_byte(CONVERT_TEMPERATURE);
 	
-	_delay_ms(1000);
+	return retVal;
+	
 	/*
 	while( !read_bit() )
 	{
@@ -146,8 +167,6 @@ uint8_t DS18B20::crc8( uint8_t* data, uint8_t length )
 	return 1 - значение температуры получено успешно, 0 - ошибка
 	 
 */
-
-#include "uart.h"
 
 bool DS18B20 :: get_temperature(uint64_t address, float *temperature)
 {
@@ -255,9 +274,4 @@ uint64_t DS18B20::get_address()
 		address |= read_byte();  	
 	}
 	return address; 
-}
-
-DS18B20 :: DS18B20()
-{
-	
 }

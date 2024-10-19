@@ -11,6 +11,8 @@
 #include <util/delay.h>
 #include <stdlib.h>
 
+#include <avr/interrupt.h>
+
 #define UART_DDR  DDRD
 #define UART_PORT PORTD
 #define UART_PIN  PIND
@@ -24,8 +26,12 @@
 
 bool Uart :: isProgram = false; 
 
+static bool    byteRecieved = false;
+static uint8_t bufferValue  = 0x00;
+
 void Uart :: init(bool isProgram_, SPEED speed )
 {
+	
 	isProgram = isProgram_; 
 	
 	if( isProgram )
@@ -39,7 +45,7 @@ void Uart :: init(bool isProgram_, SPEED speed )
 	else
 	{	
 		
-		uint16_t value = 65;
+		uint16_t value = 25; // F_CPU --- 4 mhz, uart_speed - 9600
 		
 		if(speed == BAUD_115200)
 		{
@@ -52,7 +58,8 @@ void Uart :: init(bool isProgram_, SPEED speed )
 		
 		// UCSRA = 0;
 		
-		UCSRB = (1<<RXEN) | (1<<TXEN);
+		UCSRB = (1<<RXEN) | (1<<TXEN) | (1<<RXCIE);
+		
 		// UCSRC = 0;
 		// UCSRC = (1<<URSEL)|(0<<USBS)|(3<<UCSZ0);
 		
@@ -132,13 +139,11 @@ uint8_t Uart :: read_byte()
 	else
 	{
 
-		while(!(UCSRA & (1 << RXC)))
+		while(!byteRecieved)
 		{
 		}
-				
-		uint8_t byte_read = UDR;
-		
-		return byte_read;
+
+		return byteRecieved;
 		
 	}
 
@@ -146,11 +151,7 @@ uint8_t Uart :: read_byte()
 
 bool Uart::is_ready_read()
 {
-	if(UCSRA & (1 << RXC))
-	{
-		return 1; 
-	}
-	return 0; 
+	return byteRecieved; 
 }
 
 void Uart :: send(const char * pArray)
@@ -183,5 +184,8 @@ void Uart :: send (uint64_t byteToSend)
 	}
 }
 
-
-
+ISR(USART_RXC_vect)
+{
+	bufferValue  = UDR;
+	byteRecieved = true;
+}

@@ -1,207 +1,363 @@
-#include <avr/io.h>
 #include <util/delay.h>
 #include <string.h>
 #include <stdlib.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
+#include <avr/wdt.h>
 
 #include "uart.h"
 #include "temp.h"
 #include "led.h"
 
-// 4d-2-15-c2-c6-4f-ff-28
+#include "pins.h"
+#include "user_types.h"
+#include "user_error.h"
 
-// c5-2-15-c2-c6-64-ff-28
-// f4-2-15-c2-b5-4-ff-28
+#define OK    0
+#define ERROR 1
 
-#define SENSORS_COUNT 3
+#define SENSORS_COUNT 7
 
-uint64_t address_sensor [SENSORS_COUNT] = { 0x4d0215C2C64FFF28,
-	                            0xC50215C2C664FF28,
-	                            0xF40215C2B504FF28
-							   };
+static const uint64_t address_sensor [SENSORS_COUNT] = 
+{ 
+	0x4d0215C2C64FFF28, // улица
+	0xC50215C2C664FF28, // подвал
+	0xF40215C2B504FF28, // электрощиток 1
+	0xF40215C2B504FF28, // электрощиток 2
+	0xF40215C2B504FF28, // блок управления
+	0xF40215C2B504FF28, // помещение 1
+	0xF40215C2B504FF28  // помещение 2
+};
+							   
+static float temperatures[SENSORS_COUNT] = {0};
+
+static requests_t requests = { 0 };
+
+static counters_t counters = {0};
+
+void get_temperature_data();
+
+void send_state();
+
+void execute_command(char command);
+
+void init_control_pins();
+
+void init_timer();
 
 int main(void)
 {
 	
-	DS18B20::init_temp();
+	wdt_reset();
+
+	wdt_enable(WDTO_2S);
 	
-	Uart :: init(true, Uart::BAUD_9600); // Uart::BAUD_115200 
+	init_error_messaging();
 	
-	Uart :: send("Program started\r\n");
-
-	DS18B20 temp;
-
-	// 0x4d0215C2C64FFF28
-
-	// 4d-2-15-c2-c6-4f-ff-28-
-
+	init_control_pins();
+	
+	DS18B20::init_temp(TEMPERATURE);
+	
+	Uart :: init( false, Uart::BAUD_9600 );
+	
+	init_timer();
+	
+	sei();
+	
+	set_sleep_mode(SLEEP_MODE_IDLE);
+	
+	sleep_enable();
+	
 	while(1)
 	{
 		
-		char tempDiv[16];
+		sleep_cpu();
 		
-		Uart :: send("Measure temperature\r\n");
-
-		temp.measure();
-		
-		Uart :: send("Temperature sensors\r\n");
-		
-		for(int i = 0; i < SENSORS_COUNT; i++)
+		if( requests.timerTick )
 		{
 			
-			float temperature = 0;
-			for(int j = 0; j < 3; j++)
+			wdt_reset();
+			
+			if( requests.measureProccessed )
 			{
-				if( temp.get_temperature(address_sensor[i], &temperature) )
-				{
-					dtostrf( temperature, 10, 4, tempDiv );
-					Uart :: send(tempDiv);
-					break; 
-				}
-				else
-				{
-					if(j == 2)
-					{
-						Uart::send("---");
-					}
-					
-				}	
+				get_temperature_data();
+				requests.measureProccessed = false;
 			}
-			
-
-			Uart :: send(" ,");
-		}		
-		Uart :: send("\r\n");
-		//Uart :: send("Address sensor\r\n");
-		//Uart :: send(temp.get_address());
-		//Uart :: send("\r\n");
-		_delay_ms(1000);
-	}
-	
-}
-
-
-
-
-/*
-void led_indicate()
-{
-	PORTD |= 1 << PD5;
-	_delay_ms(1);
-	//_delay_us(1666);
-	PORTD &= ~(1 << PD5);
-	_delay_ms(9);
-}
-
-void light_off()
-{
-	PORTB &= ~(1 << PB5);
-	
-}
-
-void light_on()
-{
-	PORTB |= 1 << PB5;
-}
-
-int main(void)
-{
-	
-	DDRD  |= 1 << PD5; 
-	DDRB  |= 1 << PB5;
-	
-	DDRD  &= ~(1 << PD3); 
-	PORTD |= 1 << PD3; 
-	
-	bool last_button_state = false; 
-	bool light_state = false;
-	
-	while (1)
-	{
-		// 1010 1011
-		// 0000 1000
-		//      1000
-		
-		// 1010 0011
-		// 0000 1000
-		// 0000 0000
-		bool current_button_state = 0;
-		
-		if(PIND & (1<<PD3))
-		{
-			current_button_state = 1; 
-		}
-		else
-		{
-			current_button_state = 0; 
-		}
-		
-		
-		if(last_button_state == current_button_state)
-		{
-			_delay_ms(1);
-		}
-		else
-		{ 
-			last_button_state = current_button_state;
-			if(current_button_state)
+			else
 			{
-				if(light_state)
+				if ( ! DS18B20::measure() )
 				{
-					light_state = false;
-					light_off();
+					show_error(ERROR_TEMPERATURE_SENSORS_RESET_FAILURE);
 				}
-				else
-				{
-					light_state = true;
-					light_on();
-				}
-				 
-			} 
+				requests.measureProccessed = true;
+			}	
+			requests.timerTick = 0;
 		}
-		
+
+		if( !Uart::is_ready_read() )
+		{
+			continue;
+		}
+	
+		execute_command( Uart::read_byte() );
 		
 	}
 	
+}
+	
+/**
+	@brief 
 */
 
-/*
-	DDRD |= 1 << PD4;
-	DDRD &= ~(1 << PD1); 
+ISR(TIMER1_COMPA_vect)
+{
 	
-	PORTD |= 1 << PD1;
+	requests.timerTick = 1;
+
+	// ------- Уменьшение значений счетчиков защиты от преждевременного повторного включения
 	
-	int mode = 0; // 1 2 3 
+	if( counters.vent      != 0 ) { counters.vent      -= 1; }
+	if( counters.heat      != 0 ) { counters.heat      -= 1; }
+	if( counters.light     != 0 ) { counters.light     -= 1; }
+	if( counters.reserved0 != 0 ) { counters.reserved0 -= 1; }
+	if( counters.reserved1 != 0 ) { counters.reserved1 -= 1; }
+	if( counters.reserved2 != 0 ) { counters.reserved2 -= 1; }
 	
-    while (1) 
-    {
+	// ------- Обработка запросов на включение, включение происходит только при запросе и счетчике защиты в значении 0
+	
+	if( ( requests.ventilation ) && ( counters.vent == 0 ) )
+	{
+		CONTROL_PORT &= ~(1 << VENTILATION);
+		counters.vent = VENTILATION_ON_SAFE_TIME_IN_SECONDS;
+	}
+	
+	if( ( requests.heating ) && ( counters.heat == 0 ) )
+	{
+		CONTROL_PORT &= ~(1 << HEATING);
+		counters.heat = HEATING_ON_SAFE_TIME_IN_SECONDS;
+	}
+	
+	if( ( requests.light ) && ( counters.light == 0 )  )
+	{
+		CONTROL_PORT &= ~(1 << HEATING);
+		counters.light = LIGHT_ON_SAFE_TIME_IN_SECONDS;
+	}
+
+	if( ( requests.reserved0 ) && ( counters.reserved0 == 0 ) )
+	{
+		CONTROL_PORT &= ~(1 << RESERVED_0);
+		counters.reserved0 = RESERVED_0_ON_SAFE_TIME_IN_SECONDS;
+	}
+	
+	if( ( requests.reserved2 ) && ( counters.reserved1 == 0 ) )
+	{
+		CONTROL_PORT &= ~(1 << RESERVED_1);
+		counters.reserved1 = RESERVED_1_ON_SAFE_TIME_IN_SECONDS;
+	}
+	
+	if( ( counters.reserved2 == 0 ) && ( counters.reserved2 == 0 ) )
+	{
+		CONTROL_PORT &= ~(1 << RESERVED_2);
+		counters.reserved2 = RESERVED_2_ON_SAFE_TIME_IN_SECONDS;
+	}
+
+}
+
+void execute_command(char command)
+{
+	
+	// Включение только по-запросу, из таймера, выключение немедленное
+
+	if( command == '1' )
+	{
+		requests.ventilation = true;
+		send_state();
+	}
+	else if( command == '2' )
+	{
+		requests.heating = true;
+		send_state();
+	}
+	else if( command == '3' )
+	{
+		requests.light = true;
+		send_state();
+	}
+	else if( command == '4' )
+	{
+		requests.reserved0 = true;
+		send_state();
+	}
+	else if( command == '5' )
+	{
+		requests.reserved1 = true;
+		send_state();
+	}
+	else if( command == '6' )
+	{
+		requests.reserved2 = true;
+		send_state();
+	}
+	else if( command == 'q' )
+	{
+		CONTROL_PORT &= ~(1 << VENTILATION);
+		send_state();
+	}
+	else if( command == 'w' )
+	{
+		CONTROL_PORT &= ~(1 << HEATING);
+		send_state();
+	}
+	else if( command == 'e' )
+	{
+		CONTROL_PORT &= ~(1 << LIGHT);
+		send_state();
+	}
+	else if( command == 'r' )
+	{
+		CONTROL_PORT &= ~(1 << RESERVED_0);
+		send_state();
+	}
+	else if( command == 't' )
+	{
+		CONTROL_PORT &= ~(1 << RESERVED_1);
+		send_state();
+	}
+	else if( command == 'y' )
+	{
+		CONTROL_PORT &= ~(1 << RESERVED_2);
+		send_state();
+	}
+	else if( command == 'g' ) // Получение данных температуры и состояния порта
+	{
 		
-			switch(mode)
-			{
-				case 1 : PORTD |= 1 << PD4; _delay_ms(2); PORTD &= ~(1 << PD4); _delay_ms(8); break; 
-				case 2 : PORTD |= 1 << PD4; _delay_ms(4); PORTD &= ~(1 << PD4); _delay_ms(6); break; 
-				case 3 : PORTD |= 1 << PD4; _delay_ms(6); PORTD &= ~(1 << PD4); _delay_ms(4); break; 
-			}
-		
+		Uart::send("{");
 			
-			static bool last_button_state = false;
-			bool current_button_state     =  PIND & (1 << PD1);
+		char tempDiv[24] = {0};
+			
+		for( uint8_t i = 0 ; i < SENSORS_COUNT; i++ )
+		{
+				
+			Uart::send("sensor_");
+				
+			itoa(i, tempDiv, 10);
+				
+			Uart::send(tempDiv);
+				
+			Uart::send(":");
+				
+			dtostrf( temperatures[i], 10, 4, tempDiv );
+				
+			Uart::send(tempDiv);
+				
+			Uart::send(",");
+				
+		}
+			
+		// send sensors data
+			
+		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_0) )
+		{
+			Uart :: send("d0:1,");
+		}
+		else
+		{
+			Uart :: send("d0:0,");
+		}
+			
+		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_1) )
+		{
+			Uart :: send("d1:1,");
+		}
+		else
+		{
+			Uart :: send("d1:0,");
+		}
+			
+		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_2) )
+		{
+			Uart :: send("d2:1,");
+		}
+		else
+		{
+			Uart :: send("d2:0,");
+		}
+			
+		Uart::send(",");
+		
+		ADCSRA = (1<<ADEN) | (1<<ADPS2) | (0<<ADPS1) | (0<<ADPS0);
+		
+		for(uint8_t i = 0; i < 8; i++)
+		{
+			
+			char tempDiv[8] = {0};
+				
+			ADMUX = (1<<ADLAR) | i;
+			
+			ADCSRA |= (1<<ADSC);
+			
+			Uart::send("adc_0:");
+			
+			while( ! ( ADCSRA & ADIF ) )
+			{}
+			
+			// ADCH 
+			itoa(i, tempDiv, 10);
+			
+			Uart::send(",");
+			
+		}
+		
+		ADCSRA &= (1<<ADEN);
+		
+		Uart::send("}");
+		
+	}
+	
+}
 
-			if( last_button_state != current_button_state )
+void get_temperature_data()
+{
+	for(int i = 0; i < SENSORS_COUNT; i++)
+	{
+		
+		float temperature = 0;
+		
+		temperatures[i] = -255;
+		
+		for(int j = 0; j < 3; j++)
+		{
+			if( DS18B20::get_temperature(address_sensor[i], &temperature) )
 			{
-				
-				_delay_ms(150);
-				
-				if( current_button_state )
-				{	
-					
-					mode = (mode + 1) % 4;	
-					
-				}
-				
-				last_button_state = current_button_state;
-				
+				temperatures[i] = temperature;
+				break;
 			}
-	}*/
+		}
+	}
+}
 
+void send_state()
+{
+	
+	Uart :: send("{state:ok}");
 
+}
+
+void init_control_pins()
+{
+	CONTROL_PORT &= ~( (1 << VENTILATION) | (1 << HEATING) | (1 << LIGHT) | (1<<RESERVED_0) | (1<<RESERVED_1) | (1<<RESERVED_2) );
+
+	CONTROL_DDR  |= ( 1 << VENTILATION ) | (1 << HEATING) | (1 << LIGHT) | (1<<RESERVED_0) | (1<<RESERVED_1) | (1<<RESERVED_2);
+}
+
+void init_timer()
+{
+	TCNT1  = 0x0000;
+	
+	OCR1A   = 15625;
+	
+	TCCR1A = 0;
+	TCCR1B = (1<<WGM12) | (1<<CS10) | (1<<CS11);
+	
+	TIMSK |= (1<<OCIE1A);
+}

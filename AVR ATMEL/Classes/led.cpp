@@ -48,13 +48,14 @@ void Led :: led_control()
 	
 	switch(echo)
 	{
-		case '1': PORTD &= ~(1 << VENTILATION); Uart :: send_byte(echo); break;
-		case '2': PORTD &= ~(1 << HEATING);     Uart :: send_byte(echo); break;
-		case '3': PORTD &= ~(1 << LIGHT);       Uart :: send_byte(echo); break;
-		case 'q': PORTD |= (1 << VENTILATION);  Uart :: send_byte(echo); break;
-		case 'w': PORTD |= (1 << HEATING);      Uart :: send_byte(echo); break;
-		case 'e': PORTD |= (1 << LIGHT);        Uart :: send_byte(echo); break;
-		case 'g': Uart :: send_byte(echo); send_sensors_data(); break;
+		case '1' : PORTD &= ~(1 << VENTILATION); Uart :: send_byte(echo); break;
+		case '2' : PORTD &= ~(1 << HEATING);     Uart :: send_byte(echo); break;
+		case '3' : PORTD &= ~(1 << LIGHT);       Uart :: send_byte(echo); break;
+		case 'q' : PORTD |= (1 << VENTILATION);  Uart :: send_byte(echo); break;
+		case 'w' : PORTD |= (1 << HEATING);      Uart :: send_byte(echo); break;
+		case 'e' : PORTD |= (1 << LIGHT);        Uart :: send_byte(echo); break;
+		case 'g' : Uart :: send_byte(echo); send_sensors_data(); break;
+		// case 'h' : 
 	}
 	
 }
