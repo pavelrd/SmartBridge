@@ -12,6 +12,7 @@
 #include "pins.h"
 #include "user_types.h"
 #include "user_error.h"
+#include "crc.hpp"
 
 #define OK    0
 #define ERROR 1
@@ -47,7 +48,9 @@ void init_timer();
 
 int main(void)
 {
-	
+
+	asm("break");
+		
 	wdt_reset();
 
 	wdt_enable(WDTO_2S);
@@ -72,7 +75,9 @@ int main(void)
 	{
 		
 		sleep_cpu();
-		
+
+		asm("break");
+
 		if( requests.timerTick )
 		{
 			
@@ -111,6 +116,8 @@ int main(void)
 
 ISR(TIMER1_COMPA_vect)
 {
+
+	asm("break");
 	
 	requests.timerTick = 1;
 
@@ -129,36 +136,42 @@ ISR(TIMER1_COMPA_vect)
 	{
 		CONTROL_PORT &= ~(1 << VENTILATION);
 		counters.vent = VENTILATION_ON_SAFE_TIME_IN_SECONDS;
+		requests.ventilation = 0;
 	}
 	
 	if( ( requests.heating ) && ( counters.heat == 0 ) )
 	{
 		CONTROL_PORT &= ~(1 << HEATING);
 		counters.heat = HEATING_ON_SAFE_TIME_IN_SECONDS;
+		requests.heating = 0;
 	}
 	
 	if( ( requests.light ) && ( counters.light == 0 )  )
 	{
 		CONTROL_PORT &= ~(1 << HEATING);
 		counters.light = LIGHT_ON_SAFE_TIME_IN_SECONDS;
+		requests.light = 0;
 	}
 
 	if( ( requests.reserved0 ) && ( counters.reserved0 == 0 ) )
 	{
 		CONTROL_PORT &= ~(1 << RESERVED_0);
 		counters.reserved0 = RESERVED_0_ON_SAFE_TIME_IN_SECONDS;
+		requests.reserved0 = 0;
 	}
 	
-	if( ( requests.reserved2 ) && ( counters.reserved1 == 0 ) )
+	if( ( requests.reserved1 ) && ( counters.reserved1 == 0 ) )
 	{
 		CONTROL_PORT &= ~(1 << RESERVED_1);
 		counters.reserved1 = RESERVED_1_ON_SAFE_TIME_IN_SECONDS;
+		requests.reserved1 = 0;
 	}
 	
 	if( ( counters.reserved2 == 0 ) && ( counters.reserved2 == 0 ) )
 	{
 		CONTROL_PORT &= ~(1 << RESERVED_2);
 		counters.reserved2 = RESERVED_2_ON_SAFE_TIME_IN_SECONDS;
+		requests.reserved2 = 0;
 	}
 
 }
