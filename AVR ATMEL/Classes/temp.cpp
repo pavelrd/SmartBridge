@@ -14,7 +14,8 @@
 
 #define TEMP_PORT_DDR  DDRB
 #define TEMP_PORT_PORT PORTB
- 
+#define TEMP_PORT_PIN  PINB
+
 uint8_t DS18B20::pinNumber = 0;
 
 void DS18B20 :: init_temp( uint8_t _pinNumber )
@@ -27,6 +28,13 @@ void DS18B20 :: init_temp( uint8_t _pinNumber )
 bool DS18B20 :: checkready_temperature()
 {
 	
+	// Проверяем что на линии нет КЗ на землю(не ноль)
+	
+	if( ! ( TEMP_PORT_PIN & (1<<pinNumber) ) )
+	{
+		return false;
+	}
+	
 	TEMP_PORT_DDR |= 1 << pinNumber; // устанавливаем шину в ноль
 	_delay_us(490);
 	TEMP_PORT_DDR &= ~(1 << pinNumber); // отпускаeм шину
@@ -34,21 +42,11 @@ bool DS18B20 :: checkready_temperature()
 	
 	if( ! ( PINB & (1 << pinNumber) ) ) // Шина в нуле после отпускания, есть устройства
 	{	
+		_delay_ms(1);
 		return true;
 	}
 	
-	uint8_t try_counter = 0;
-	
-	while(PINB & (1 << pinNumber))
-	{
-		TEMP_PORT_DDR |= 1 << pinNumber; // устанавливаем шину в ноль
-		_delay_us(490);
-		TEMP_PORT_DDR &= ~(1 << pinNumber); // отпускаeм шину
-		_delay_us(70);
-	}
-	
-	_delay_us(490);
-	
+	_delay_ms(1);
 	return false;
 	
 }
@@ -120,12 +118,22 @@ bool DS18B20::measure()
 	
 	// Запуск измерения температуры
 	
-	bool retVal = checkready_temperature();
-	
-	write_byte(SKIP_ROM);
-	write_byte(CONVERT_TEMPERATURE);
-	
-	return retVal;
+	if ( checkready_temperature() )
+	{
+		
+		write_byte(SKIP_ROM);
+		
+		write_byte(CONVERT_TEMPERATURE);
+		
+		return true;
+		
+	}
+	else 
+	{
+		
+		return false;
+		
+	}
 	
 	/*
 	while( !read_bit() )
@@ -177,10 +185,13 @@ bool DS18B20 :: get_temperature(uint64_t address, float *temperature)
 	
 	uint8_t scratchpad[9] = {0};
 	
-	for(int try_count = 0; try_count < 8; try_count++)
-	{
+	for(int try_count = 0; try_count < 4; try_count++) // Повторное чтение, 4 раза, чтобы вероянтность пропуска ошибки была 1 к 2^32. Так как контрольная сумма при передаче от датчика
+	{                                                  // 2^8
 		
-		checkready_temperature();
+		if ( !checkready_temperature() )
+		{
+			break;
+		}
 		
 		if( address == 0 )
 		{
