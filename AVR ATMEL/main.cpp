@@ -8,7 +8,7 @@
 #include "uart.h"
 #include "temp.h"
 #include "led.h"
-
+ 
 #include "pins.h"
 #include "user_types.h"
 #include "user_error.h"
@@ -23,13 +23,13 @@
 
 static const uint64_t address_sensor [SENSORS_COUNT] = 
 { 
-	0x4d0215C2C64FFF28, // улица
-	0xC50215C2C664FF28, // подвал
-	0xF40215C2B504FF28, // электрощиток 1
-	0xF40215C2B504FF28, // электрощиток 2
-	0xF40215C2B504FF28, // блок управления
-	0xF40215C2B504FF28, // помещение 1
-	0xF40215C2B504FF28  // помещение 2
+	0x4d0215C2C64FFF28, // СѓР»РёС†Р°
+	0xC50215C2C664FF28, // РїРѕРґРІР°Р»
+	0xF40215C2B504FF28, // СЌР»РµРєС‚СЂРѕС‰РёС‚РѕРє 1
+	0xF40215C2B504FF28, // СЌР»РµРєС‚СЂРѕС‰РёС‚РѕРє 2
+	0xF40215C2B504FF28, // Р±Р»РѕРє СѓРїСЂР°РІР»РµРЅРёСЏ
+	0xF40215C2B504FF28, // РїРѕРјРµС‰РµРЅРёРµ 1
+	0xF40215C2B504FF28  // РїРѕРјРµС‰РµРЅРёРµ 2
 };
 
 struct temperatures_t
@@ -139,15 +139,15 @@ int main(void)
 inline bool on_if_need( bool isOnRequested, uint8_t* safeCounter, uint8_t pinToOn, uint8_t safeInterval )
 {
 	
-	// ------- Уменьшение значения счетчика защиты от преждевременного повторного включения
+	// ------- РЈРјРµРЅСЊС€РµРЅРёРµ Р·РЅР°С‡РµРЅРёСЏ СЃС‡РµС‚С‡РёРєР° Р·Р°С‰РёС‚С‹ РѕС‚ РїСЂРµР¶РґРµРІСЂРµРјРµРЅРЅРѕРіРѕ РїРѕРІС‚РѕСЂРЅРѕРіРѕ РІРєР»СЋС‡РµРЅРёСЏ
 
 	if( *safeCounter != 0 )
 	{
 		*safeCounter -= 1;
 	}
 	
-	// ------- Включение, если требуется
-	//          включение происходит только при запросе и счетчике защиты в значении 0
+	// ------- Р’РєР»СЋС‡РµРЅРёРµ, РµСЃР»Рё С‚СЂРµР±СѓРµС‚СЃСЏ
+	//          РІРєР»СЋС‡РµРЅРёРµ РїСЂРѕРёСЃС…РѕРґРёС‚ С‚РѕР»СЊРєРѕ РїСЂРё Р·Р°РїСЂРѕСЃРµ Рё СЃС‡РµС‚С‡РёРєРµ Р·Р°С‰РёС‚С‹ РІ Р·РЅР°С‡РµРЅРёРё 0
 	
 	if( ( isOnRequested ) && ( *safeCounter == 0 ) )
 	{
@@ -171,7 +171,7 @@ ISR(TIMER1_COMPA_vect)
 	
 	requests.timerTick = 1;
 
-	// ------- Обработка запросов на включение
+	// ------- РћР±СЂР°Р±РѕС‚РєР° Р·Р°РїСЂРѕСЃРѕРІ РЅР° РІРєР»СЋС‡РµРЅРёРµ
 	
 	requests.ventilation = on_if_need( requests.ventilation, &(counters.vent),      VENTILATION, VENTILATION_ON_SAFE_TIME_IN_SECONDS );
 	requests.heating     = on_if_need( requests.heating,     &(counters.heat),      HEATING,     HEATING_ON_SAFE_TIME_IN_SECONDS     );
@@ -182,10 +182,12 @@ ISR(TIMER1_COMPA_vect)
 
 }
 
+
+
 void execute_command(char command)
 {
 	
-	// Включение только по-запросу, из таймера, выключение немедленное
+	// Р’РєР»СЋС‡РµРЅРёРµ С‚РѕР»СЊРєРѕ РїРѕ-Р·Р°РїСЂРѕСЃСѓ, РёР· С‚Р°Р№РјРµСЂР°, РІС‹РєР»СЋС‡РµРЅРёРµ РЅРµРјРµРґР»РµРЅРЅРѕРµ
 
 	if( command == '1' )
 	{
@@ -220,8 +222,8 @@ void execute_command(char command)
 	else if( command == 'q' )
 	{
 		asm("cli"); 
-		requests.ventilation = 0; // CLI чтобы по прерыванию не включилось вновь после этого
-		CONTROL_PORT &= ~(1 << VENTILATION); // и тут же мгновенно выключилось вот здесь
+		requests.ventilation = 0; // CLI С‡С‚РѕР±С‹ РїРѕ РїСЂРµСЂС‹РІР°РЅРёСЋ РЅРµ РІРєР»СЋС‡РёР»РѕСЃСЊ РІРЅРѕРІСЊ РїРѕСЃР»Рµ СЌС‚РѕРіРѕ
+		CONTROL_PORT &= ~(1 << VENTILATION); // Рё С‚СѓС‚ Р¶Рµ РјРіРЅРѕРІРµРЅРЅРѕ РІС‹РєР»СЋС‡РёР»РѕСЃСЊ РІРѕС‚ Р·РґРµСЃСЊ
 		asm("sei");
 		send_state();
 	}
@@ -265,7 +267,7 @@ void execute_command(char command)
 		asm("sei");
 		send_state();
 	}
-	else if( command == 'g' ) // Получение данных температуры и состояния порта
+	else if( command == 'g' ) // РџРѕР»СѓС‡РµРЅРёРµ РґР°РЅРЅС‹С… С‚РµРјРїРµСЂР°С‚СѓСЂС‹ Рё СЃРѕСЃС‚РѕСЏРЅРёСЏ РїРѕСЂС‚Р°
 	{
 		
 		Uart::send("{");
