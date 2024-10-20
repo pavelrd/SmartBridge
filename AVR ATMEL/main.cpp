@@ -112,7 +112,34 @@ int main(void)
 	}
 	
 }
+
+
+inline bool on_if_need( bool isOnRequested, uint8_t* safeCounter, uint8_t pinToOn, uint8_t safeInterval )
+{
 	
+	// ------- Уменьшение значения счетчика защиты от преждевременного повторного включения
+
+	if( *safeCounter != 0 )
+	{
+		*safeCounter -= 1;
+	}
+	
+	// ------- Включение, если требуется
+	//          включение происходит только при запросе и счетчике защиты в значении 0
+	
+	if( ( isOnRequested ) && ( *safeCounter == 0 ) )
+	{
+		CONTROL_PORT |= 1 << pinToOn;
+		*safeCounter = safeInterval;
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+	
+}
+
 /**
 	@brief 
 */
@@ -122,58 +149,14 @@ ISR(TIMER1_COMPA_vect)
 	
 	requests.timerTick = 1;
 
-	// ------- Уменьшение значений счетчиков защиты от преждевременного повторного включения
+	// ------- Обработка запросов на включение
 	
-	if( counters.vent      != 0 ) { counters.vent      -= 1; }
-	if( counters.heat      != 0 ) { counters.heat      -= 1; }
-	if( counters.light     != 0 ) { counters.light     -= 1; }
-	if( counters.reserved0 != 0 ) { counters.reserved0 -= 1; }
-	if( counters.reserved1 != 0 ) { counters.reserved1 -= 1; }
-	if( counters.reserved2 != 0 ) { counters.reserved2 -= 1; }
-	
-	// ------- Обработка запросов на включение, включение происходит только при запросе и счетчике защиты в значении 0
-	
-	if( ( requests.ventilation ) && ( counters.vent == 0 ) )
-	{
-		CONTROL_PORT &= ~(1 << VENTILATION);
-		counters.vent = VENTILATION_ON_SAFE_TIME_IN_SECONDS;
-		requests.ventilation = 0;
-	}
-	
-	if( ( requests.heating ) && ( counters.heat == 0 ) )
-	{
-		CONTROL_PORT &= ~(1 << HEATING);
-		counters.heat = HEATING_ON_SAFE_TIME_IN_SECONDS;
-		requests.heating = 0;
-	}
-	
-	if( ( requests.light ) && ( counters.light == 0 )  )
-	{
-		CONTROL_PORT &= ~(1 << HEATING);
-		counters.light = LIGHT_ON_SAFE_TIME_IN_SECONDS;
-		requests.light = 0;
-	}
-
-	if( ( requests.reserved0 ) && ( counters.reserved0 == 0 ) )
-	{
-		CONTROL_PORT &= ~(1 << RESERVED_0);
-		counters.reserved0 = RESERVED_0_ON_SAFE_TIME_IN_SECONDS;
-		requests.reserved0 = 0;
-	}
-	
-	if( ( requests.reserved1 ) && ( counters.reserved1 == 0 ) )
-	{
-		CONTROL_PORT &= ~(1 << RESERVED_1);
-		counters.reserved1 = RESERVED_1_ON_SAFE_TIME_IN_SECONDS;
-		requests.reserved1 = 0;
-	}
-	
-	if( ( counters.reserved2 == 0 ) && ( counters.reserved2 == 0 ) )
-	{
-		CONTROL_PORT &= ~(1 << RESERVED_2);
-		counters.reserved2 = RESERVED_2_ON_SAFE_TIME_IN_SECONDS;
-		requests.reserved2 = 0;
-	}
+	requests.ventilation = on_if_need( requests.ventilation, &(counters.vent),      VENTILATION, VENTILATION_ON_SAFE_TIME_IN_SECONDS );
+	requests.heating     = on_if_need( requests.heating,     &(counters.heat),      HEATING,     HEATING_ON_SAFE_TIME_IN_SECONDS     );
+	requests.light       = on_if_need( requests.light,       &(counters.light),     LIGHT,       LIGHT_ON_SAFE_TIME_IN_SECONDS       );
+	requests.reserved0   = on_if_need( requests.reserved0,   &(counters.reserved0), RESERVED_0,  RESERVED_0_ON_SAFE_TIME_IN_SECONDS  );
+	requests.reserved1   = on_if_need( requests.reserved1,   &(counters.reserved1), RESERVED_1,  RESERVED_1_ON_SAFE_TIME_IN_SECONDS  );
+	requests.reserved2   = on_if_need( requests.reserved2,   &(counters.reserved2), RESERVED_2,  RESERVED_2_ON_SAFE_TIME_IN_SECONDS  );
 
 }
 
@@ -214,32 +197,50 @@ void execute_command(char command)
 	}
 	else if( command == 'q' )
 	{
-		CONTROL_PORT &= ~(1 << VENTILATION);
+		asm("cli"); 
+		requests.ventilation = 0; // CLI чтобы по прерыванию не включилось вновь после этого
+		CONTROL_PORT &= ~(1 << VENTILATION); // и тут же мгновенно выключилось вот здесь
+		asm("sei");
 		send_state();
 	}
 	else if( command == 'w' )
 	{
+		asm("cli");
+		requests.heating = 0;
 		CONTROL_PORT &= ~(1 << HEATING);
+		asm("sei");
 		send_state();
 	}
 	else if( command == 'e' )
 	{
+		asm("cli");
+		requests.light = 0;
 		CONTROL_PORT &= ~(1 << LIGHT);
+		asm("sei");
 		send_state();
 	}
 	else if( command == 'r' )
 	{
+		asm("cli");
+		requests.reserved0 = 0;
 		CONTROL_PORT &= ~(1 << RESERVED_0);
+		asm("sei");
 		send_state();
 	}
 	else if( command == 't' )
 	{
+		asm("cli");
+		requests.reserved1 = 0;
 		CONTROL_PORT &= ~(1 << RESERVED_1);
+		asm("sei");
 		send_state();
 	}
 	else if( command == 'y' )
 	{
+		asm("cli");
+		requests.reserved2 = 0;
 		CONTROL_PORT &= ~(1 << RESERVED_2);
+		asm("sei");
 		send_state();
 	}
 	else if( command == 'g' ) // Получение данных температуры и состояния порта

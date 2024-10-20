@@ -37,6 +37,8 @@ bool DS18B20 :: checkready_temperature()
 		return true;
 	}
 	
+	uint8_t try_counter = 0;
+	
 	while(PINB & (1 << pinNumber))
 	{
 		TEMP_PORT_DDR |= 1 << pinNumber; // устанавливаем шину в ноль
