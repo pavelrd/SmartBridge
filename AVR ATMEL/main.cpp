@@ -17,6 +17,8 @@
 #define OK    0
 #define ERROR 1
 
+#define TEMPERATURE_TRY_COUNTER 5
+
 #define SENSORS_COUNT 7
 
 static const uint64_t address_sensor [SENSORS_COUNT] = 
@@ -29,8 +31,14 @@ static const uint64_t address_sensor [SENSORS_COUNT] =
 	0xF40215C2B504FF28, // помещение 1
 	0xF40215C2B504FF28  // помещение 2
 };
-							   
-static float temperatures[SENSORS_COUNT] = {0};
+
+struct temperatures_t
+{
+	float value;
+	bool  isActual;	
+};
+			   
+static temperatures_t temperatures[SENSORS_COUNT] = {0};
 
 static requests_t requests = { 0 };
 
@@ -45,6 +53,8 @@ void execute_command(char command);
 void init_control_pins();
 
 void init_timer();
+
+void clear_temperature_data();
 
 int main(void)
 {
@@ -82,7 +92,6 @@ int main(void)
 			
 			wdt_reset();
 			
-
 			if( requests.measureProccessed )
 			{
 				get_temperature_data();
@@ -90,14 +99,27 @@ int main(void)
 			}
 			else
 			{
-				if ( ! DS18B20::measure() )
+				
+				for( uint8_t try_counter = 0 ; try_counter < TEMPERATURE_TRY_COUNTER; try_counter++ )
 				{
-					show_error(ERROR_TEMPERATURE_SENSORS_RESET_FAILURE);
+					if ( ! DS18B20::measure() )
+					{
+						show_error(ERROR_TEMPERATURE_SENSORS_RESET_FAILURE);
+					}
+					else
+					{
+						requests.measureProccessed = true;
+						break;
+					}
 				}
-				requests.measureProccessed = true;
+				
+				if( !requests.measureProccessed )
+				{
+					clear_temperature_data();
+				}
+				
 			}
 
-				
 			requests.timerTick = 0;
 			
 		}
@@ -261,7 +283,7 @@ void execute_command(char command)
 				
 			Uart::send(":");
 				
-			dtostrf( temperatures[i], 10, 4, tempDiv );
+			dtostrf( temperatures[i].value, 10, 4, tempDiv );
 				
 			Uart::send(tempDiv);
 				
@@ -331,24 +353,38 @@ void execute_command(char command)
 	
 }
 
+void clear_temperature_data()
+{
+	
+	for(int i = 0; i < SENSORS_COUNT; i++)
+	{		
+		temperatures[i].isActual = false;
+	}
+	
+}
+
 void get_temperature_data()
 {
+	
+	clear_temperature_data();
+
 	for(int i = 0; i < SENSORS_COUNT; i++)
 	{
-		
-		float temperature = 0;
-		
-		temperatures[i] = -255;
-		
-		for(int j = 0; j < 3; j++)
+		for(int j = 0; j < TEMPERATURE_TRY_COUNTER; j++) 
 		{
+			float temperature = 0;
 			if( DS18B20::get_temperature(address_sensor[i], &temperature) )
 			{
-				temperatures[i] = temperature;
+				temperatures[i].value = temperature;
 				break;
+			}
+			else
+			{
+				show_error(ERROR_TEMPERATURE_SENSORS_GET_MEASURE_FAILURE);
 			}
 		}
 	}
+	
 }
 
 void send_state()
