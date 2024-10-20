@@ -49,14 +49,14 @@ void init_timer();
 int main(void)
 {
 
-	asm("break");
-		
+	init_error_messaging();
+
+	check_reset_state();
+			
 	wdt_reset();
 
 	wdt_enable(WDTO_2S);
-	
-	init_error_messaging();
-	
+		
 	init_control_pins();
 	
 	DS18B20::init_temp(TEMPERATURE);
@@ -70,19 +70,19 @@ int main(void)
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	
 	sleep_enable();
-	
+		
 	while(1)
 	{
 		
 		sleep_cpu();
 
-		asm("break");
 
 		if( requests.timerTick )
 		{
 			
 			wdt_reset();
 			
+
 			if( requests.measureProccessed )
 			{
 				get_temperature_data();
@@ -95,15 +95,18 @@ int main(void)
 					show_error(ERROR_TEMPERATURE_SENSORS_RESET_FAILURE);
 				}
 				requests.measureProccessed = true;
-			}	
+			}
+
+				
 			requests.timerTick = 0;
+			
 		}
 
 		if( !Uart::is_ready_read() )
 		{
 			continue;
 		}
-	
+				
 		execute_command( Uart::read_byte() );
 		
 	}
@@ -116,8 +119,6 @@ int main(void)
 
 ISR(TIMER1_COMPA_vect)
 {
-
-	asm("break");
 	
 	requests.timerTick = 1;
 

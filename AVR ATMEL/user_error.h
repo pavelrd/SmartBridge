@@ -12,10 +12,16 @@
 enum ERROR_TYPE
 {
 	ERROR_TEMPERATURE_SENSORS_RESET_FAILURE,
+	ERROR_RESET_JTAG,
+	ERROR_RESET_WATCHDOG,
+	ERROR_RESET_BROWN_OUT,
+	ERROR_RESET_EXTRF
 };
 
 void init_error_messaging();
 
 void show_error( enum ERROR_TYPE error );
+
+void check_reset_state();
 
 #endif /* USER_ERROR_H_ */
