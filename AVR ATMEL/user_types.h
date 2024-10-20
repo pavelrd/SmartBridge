@@ -9,7 +9,7 @@
 #ifndef USER_TYPES_H_
 #define USER_TYPES_H_
 
-union requests_t
+struct requests_t
 {
 	uint8_t ventilation       : 1;
 	uint8_t light             : 1;
