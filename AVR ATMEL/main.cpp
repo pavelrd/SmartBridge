@@ -19,6 +19,10 @@
 
 #define TEMPERATURE_TRY_COUNTER 5
 
+#define ADC_MULTIPLIER 0.013
+
+#define ADC_CHANNELS 8
+
 #define SENSORS_COUNT 7
 
 static const uint64_t address_sensor [SENSORS_COUNT] = 
@@ -56,9 +60,16 @@ void init_timer();
 
 void clear_temperature_data();
 
+
+uint8_t get_adc_value(uint8_t i);
+
+void init_adc();
+
 int main(void)
 {
-
+	
+	asm("break");
+	
 	init_error_messaging();
 
 	check_reset_state();
@@ -74,6 +85,8 @@ int main(void)
 	Uart :: init( false, Uart::BAUD_9600 );
 	
 	init_timer();
+	
+	init_adc();
 	
 	sei();
 	
@@ -182,8 +195,6 @@ ISR(TIMER1_COMPA_vect)
 
 }
 
-
-
 void execute_command(char command)
 {
 	
@@ -270,86 +281,100 @@ void execute_command(char command)
 	else if( command == 'g' ) // Получение данных температуры и состояния порта
 	{
 		
-		Uart::send("{");
-			
-		char tempDiv[24] = {0};
-			
+		uint32_t crc = 0;
+		
+		char tempDiv[24] = "{";
+		
 		for( uint8_t i = 0 ; i < SENSORS_COUNT; i++ )
 		{
-				
-			Uart::send("sensor_");
-				
-			itoa(i, tempDiv, 10);
-				
+			
+			if( i != 0 )
+			{
+				tempDiv[0] = '\0';
+			}
+			
+			strcat(tempDiv, "sensor_");
+			
+			itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
+	
+			strcat(tempDiv, ":");
+			
+			dtostrf( temperatures[i].value, 5, 2, &(tempDiv[strlen(tempDiv)]) );
+			
+			strcat(tempDiv, ",");
+			
 			Uart::send(tempDiv);
-				
-			Uart::send(":");
-				
-			dtostrf( temperatures[i].value, 10, 4, tempDiv );
-				
-			Uart::send(tempDiv);
-				
-			Uart::send(",");
-				
+			
+			crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+			
 		}
 			
 		// send sensors data
-			
+		
+		tempDiv[0] = '\0';
+		
 		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_0) )
 		{
-			Uart :: send("d0:1,");
+			strcat(tempDiv, "d0:1,");
 		}
 		else
 		{
-			Uart :: send("d0:0,");
+			strcat(tempDiv, "d0:0,");
 		}
 			
 		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_1) )
 		{
-			Uart :: send("d1:1,");
+			strcat(tempDiv, "d1:1,");
 		}
 		else
 		{
-			Uart :: send("d1:0,");
+			strcat(tempDiv, "d1:0,");
 		}
 			
 		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_2) )
 		{
-			Uart :: send("d2:1,");
+			strcat(tempDiv, "d2:1,");
 		}
 		else
 		{
-			Uart :: send("d2:0,");
+			strcat(tempDiv, "d2:0,");
 		}
-			
-		Uart::send(",");
 		
-		ADCSRA = (1<<ADEN) | (1<<ADPS2) | (0<<ADPS1) | (0<<ADPS0);
+		Uart::send(tempDiv);
 		
-		for(uint8_t i = 0; i < 8; i++)
-		{
-			
-			char tempDiv[8] = {0};
+		crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
 				
-			ADMUX = (1<<ADLAR) | i;
+		for(uint8_t i = 0; i < ADC_CHANNELS; i++)
+		{
+
+			strcpy( tempDiv, "\"adc_" );
 			
-			ADCSRA |= (1<<ADSC);
+			itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
 			
-			Uart::send("adc_0:");
+			strcat( tempDiv, "\":" );
+						
+			dtostrf( get_adc_value(i) * ADC_MULTIPLIER , 5, 2, &(tempDiv[strlen(tempDiv)]) );
 			
-			while( ! ( ADCSRA & ADIF ) )
-			{}
+			if( i != ( ADC_CHANNELS - 1 ) )
+			{
+				strcat( tempDiv, "," );
+			}
+			else
+			{
+				strcat(tempDiv, "}");
+			}
 			
-			// ADCH 
-			itoa(i, tempDiv, 10);
+			Uart::send(tempDiv);
 			
-			Uart::send(",");
+			crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
 			
 		}
 		
-		ADCSRA &= (1<<ADEN);
-		
-		Uart::send("}");
+		strcpy(tempDiv, "{\"crc\":");
+			
+		itoa(crc, &(tempDiv[strlen(tempDiv)]) ,16);
+			
+		strcat(tempDiv,"}");
 		
 	}
 	
@@ -413,4 +438,23 @@ void init_timer()
 	TCCR1B = (1<<WGM12) | (1<<CS10) | (1<<CS11);
 	
 	TIMSK |= (1<<OCIE1A);
+}
+
+uint8_t get_adc_value(uint8_t i)
+{
+	
+	ADMUX = (1<<ADLAR) | i;
+	
+	ADCSRA |= (1<<ADSC);
+	
+	while( ! ( ADCSRA & ADIF ) )
+	{}
+	
+	return ADCH;
+	
+}
+
+void init_adc()
+{
+	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (0<<ADPS1) | (0<<ADPS0);
 }
