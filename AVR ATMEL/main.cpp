@@ -67,9 +67,7 @@ void init_adc();
 
 int main(void)
 {
-	
-	asm("break");
-	
+		
 	init_error_messaging();
 
 	check_reset_state();
