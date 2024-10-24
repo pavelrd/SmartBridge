@@ -426,7 +426,7 @@ static char tempDiv[24] = {0};
 void send_telemetry()
 {
 	
-	tempDiv[0] = '{';
+    strcpy(tempDiv, "{");
 	
 	// Телеметрия цифровых выводов
 	
