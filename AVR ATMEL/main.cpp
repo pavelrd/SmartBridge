@@ -44,13 +44,14 @@ struct temperatures_t
 			   
 static temperatures_t temperatures[SENSORS_COUNT] = {0};
 
-static requests_t requests = { 0 };
+static control_units units = {0};
 
-static counters_t counters = {0};
+static bool measureProccessed = false;
+static bool timerTick = false;
 
 void get_temperature_data();
 
-void send_state();
+void send_state(bool state);
 
 void execute_command(char command);
 
@@ -60,6 +61,7 @@ void init_timer();
 
 void clear_temperature_data();
 
+void send_telemetry();
 
 uint8_t get_adc_value(uint8_t i);
 
@@ -98,15 +100,15 @@ int main(void)
 		sleep_cpu();
 
 
-		if( requests.timerTick )
+		if( timerTick )
 		{
 			
 			wdt_reset();
 			
-			if( requests.measureProccessed )
+			if( measureProccessed )
 			{
 				get_temperature_data();
-				requests.measureProccessed = false;
+				measureProccessed = false;
 			}
 			else
 			{
@@ -119,19 +121,19 @@ int main(void)
 					}
 					else
 					{
-						requests.measureProccessed = true;
+						measureProccessed = true;
 						break;
 					}
 				}
 				
-				if( !requests.measureProccessed )
+				if( !measureProccessed )
 				{
 					clear_temperature_data();
 				}
 				
 			}
 
-			requests.timerTick = 0;
+			timerTick = 0;
 			
 		}
 
@@ -146,33 +148,6 @@ int main(void)
 	
 }
 
-
-inline bool on_if_need( bool isOnRequested, uint8_t* safeCounter, uint8_t pinToOn, uint8_t safeInterval )
-{
-	
-	// ------- Уменьшение значения счетчика защиты от преждевременного повторного включения
-
-	if( *safeCounter != 0 )
-	{
-		*safeCounter -= 1;
-	}
-	
-	// ------- Включение, если требуется
-	//          включение происходит только при запросе и счетчике защиты в значении 0
-	
-	if( ( isOnRequested ) && ( *safeCounter == 0 ) )
-	{
-		CONTROL_PORT |= 1 << pinToOn;
-		*safeCounter = safeInterval;
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
-	
-}
-
 /**
 	@brief 
 */
@@ -180,16 +155,121 @@ inline bool on_if_need( bool isOnRequested, uint8_t* safeCounter, uint8_t pinToO
 ISR(TIMER1_COMPA_vect)
 {
 	
-	requests.timerTick = 1;
-
-	// ------- Обработка запросов на включение
+	timerTick = 1;
 	
-	requests.ventilation = on_if_need( requests.ventilation, &(counters.vent),      VENTILATION, VENTILATION_ON_SAFE_TIME_IN_SECONDS );
-	requests.heating     = on_if_need( requests.heating,     &(counters.heat),      HEATING,     HEATING_ON_SAFE_TIME_IN_SECONDS     );
-	requests.light       = on_if_need( requests.light,       &(counters.light),     LIGHT,       LIGHT_ON_SAFE_TIME_IN_SECONDS       );
-	requests.reserved0   = on_if_need( requests.reserved0,   &(counters.reserved0), RESERVED_0,  RESERVED_0_ON_SAFE_TIME_IN_SECONDS  );
-	requests.reserved1   = on_if_need( requests.reserved1,   &(counters.reserved1), RESERVED_1,  RESERVED_1_ON_SAFE_TIME_IN_SECONDS  );
-	requests.reserved2   = on_if_need( requests.reserved2,   &(counters.reserved2), RESERVED_2,  RESERVED_2_ON_SAFE_TIME_IN_SECONDS  );
+	// Уменьшение значения счетчиков защиты
+	
+	if( units.ventilation.counter != 0 )
+	{
+		units.ventilation.counter -= 1;
+	}
+	
+	if( units.heating.counter != 0 )
+	{
+		units.heating.counter -= 1;
+	}
+	
+	if( units.light.counter != 0 )
+	{
+		units.light.counter -= 1;
+	}
+	
+	if( units.reserved0.counter != 0 )
+	{
+		units.reserved0.counter -= 1;
+	}
+	
+	if( units.reserved1.counter != 0 )
+	{
+		units.reserved1.counter -= 1;
+	}
+	
+	if( units.reserved2.counter != 0 )
+	{
+		units.reserved2.counter -= 1;
+	}
+	
+}
+
+// Выключение немедленное
+
+void off( control_unit_t* unit, uint8_t pinToOff )
+{
+	
+	if( CONTROL_PIN & (1<<pinToOff) )
+	{
+		send_state(ERROR); // Нельзя исполнить команду, так как уже отключено
+		return;
+	}
+	
+	if( unit->isBad )
+	{
+		send_state(ERROR); // Ножка повреждена и находится в отключенном состоянии
+		return;	
+	}
+		
+	CONTROL_PORT &= ~(1 << pinToOff);
+	
+	_delay_us(100);
+	
+	if( CONTROL_PIN & (1 << pinToOff) )
+	{
+		// Не отключился!!!
+		CONTROL_DDR &= ~(1<<pinToOff);
+		unit->isBad  = true;
+		show_error(ERROR_PIN_SHORTED_TO_GND);
+		send_state(ERROR);
+	}
+	else
+	{
+		send_state(OK);
+	}
+	
+}
+
+// Включение только через запрос!
+
+void on( control_unit_t* unit, uint8_t pinToOn, uint8_t safeTime )
+{
+	
+	if( CONTROL_PIN & (1<<pinToOn) )
+	{
+		send_state(ERROR); // Нельзя исполнить команду, так как уже включено
+	}
+	else
+	{
+		
+		asm("cli");
+		
+		if( unit->counter != 0 )
+		{
+			asm("sei");
+			send_state(ERROR); // Нельзя включить, слишком частый запрос
+			return;
+		}
+		
+		unit->counter = safeTime;
+		
+		asm("sei");
+		
+		CONTROL_PORT |= (1<<pinToOn);
+		
+		_delay_us(100);
+		
+		if( CONTROL_PIN & (1<<pinToOn) )
+		{
+			send_state(OK);
+		}
+		else
+		{
+			// Не включился!!!
+			CONTROL_DDR &= ~(1<<pinToOn);
+			unit->isBad  = true;
+			show_error(ERROR_PIN_SHORTED_TO_GND);
+			send_state(ERROR);
+		}
+		
+	}
 
 }
 
@@ -200,179 +280,56 @@ void execute_command(char command)
 
 	if( command == '1' )
 	{
-		requests.ventilation = true;
-		send_state();
+		on( &(units.ventilation), VENTILATION, VENTILATION_ON_SAFE_TIME_IN_SECONDS );
 	}
 	else if( command == '2' )
 	{
-		requests.heating = true;
-		send_state();
+		on( &(units.heating), HEATING, HEATING_ON_SAFE_TIME_IN_SECONDS );
 	}
 	else if( command == '3' )
 	{
-		requests.light = true;
-		send_state();
+		on( &(units.light), LIGHT, LIGHT_ON_SAFE_TIME_IN_SECONDS );
 	}
 	else if( command == '4' )
 	{
-		requests.reserved0 = true;
-		send_state();
+		on( &(units.reserved0), RESERVED_0, RESERVED_0_ON_SAFE_TIME_IN_SECONDS );
 	}
 	else if( command == '5' )
 	{
-		requests.reserved1 = true;
-		send_state();
+		on( &(units.reserved1), RESERVED_1, RESERVED_1_ON_SAFE_TIME_IN_SECONDS );
 	}
 	else if( command == '6' )
 	{
-		requests.reserved2 = true;
-		send_state();
+		on( &(units.reserved2), RESERVED_2, RESERVED_2_ON_SAFE_TIME_IN_SECONDS );
 	}
 	else if( command == 'q' )
 	{
-		asm("cli"); 
-		requests.ventilation = 0; // CLI чтобы по прерыванию не включилось вновь после этого
-		CONTROL_PORT &= ~(1 << VENTILATION); // и тут же мгновенно выключилось вот здесь
-		asm("sei");
-		send_state();
+		off( &(units.ventilation), VENTILATION );
 	}
 	else if( command == 'w' )
 	{
-		asm("cli");
-		requests.heating = 0;
-		CONTROL_PORT &= ~(1 << HEATING);
-		asm("sei");
-		send_state();
+		off( &(units.heating), HEATING );
 	}
 	else if( command == 'e' )
 	{
-		asm("cli");
-		requests.light = 0;
-		CONTROL_PORT &= ~(1 << LIGHT);
-		asm("sei");
-		send_state();
+		off( &(units.light), LIGHT );
 	}
 	else if( command == 'r' )
 	{
-		asm("cli");
-		requests.reserved0 = 0;
-		CONTROL_PORT &= ~(1 << RESERVED_0);
-		asm("sei");
-		send_state();
+		off( &(units.reserved0), RESERVED_0 );
 	}
 	else if( command == 't' )
 	{
-		asm("cli");
-		requests.reserved1 = 0;
-		CONTROL_PORT &= ~(1 << RESERVED_1);
-		asm("sei");
-		send_state();
+		off( &(units.reserved1), RESERVED_1 );
 	}
 	else if( command == 'y' )
 	{
-		asm("cli");
-		requests.reserved2 = 0;
-		CONTROL_PORT &= ~(1 << RESERVED_2);
-		asm("sei");
-		send_state();
+		off( &(units.reserved2), RESERVED_2 );
 	}
 	else if( command == 'g' ) // Получение данных температуры и состояния порта
 	{
 		
-		uint32_t crc = 0;
-		
-		char tempDiv[24] = "{";
-		
-		for( uint8_t i = 0 ; i < SENSORS_COUNT; i++ )
-		{
-			
-			if( i != 0 )
-			{
-				tempDiv[0] = '\0';
-			}
-			
-			strcat(tempDiv, "sensor_");
-			
-			itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
-	
-			strcat(tempDiv, ":");
-			
-			dtostrf( temperatures[i].value, 5, 2, &(tempDiv[strlen(tempDiv)]) );
-			
-			strcat(tempDiv, ",");
-			
-			Uart::send(tempDiv);
-			
-			crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
-			
-		}
-			
-		// send sensors data
-		
-		tempDiv[0] = '\0';
-		
-		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_0) )
-		{
-			strcat(tempDiv, "d0:1,");
-		}
-		else
-		{
-			strcat(tempDiv, "d0:0,");
-		}
-			
-		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_1) )
-		{
-			strcat(tempDiv, "d1:1,");
-		}
-		else
-		{
-			strcat(tempDiv, "d1:0,");
-		}
-			
-		if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_2) )
-		{
-			strcat(tempDiv, "d2:1,");
-		}
-		else
-		{
-			strcat(tempDiv, "d2:0,");
-		}
-		
-		Uart::send(tempDiv);
-		
-		crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
-				
-		for(uint8_t i = 0; i < ADC_CHANNELS; i++)
-		{
-
-			strcpy( tempDiv, "\"adc_" );
-			
-			itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
-			
-			strcat( tempDiv, "\":" );
-						
-			dtostrf( get_adc_value(i) * ADC_MULTIPLIER , 5, 2, &(tempDiv[strlen(tempDiv)]) );
-			
-			if( i != ( ADC_CHANNELS - 1 ) )
-			{
-				strcat( tempDiv, "," );
-			}
-			else
-			{
-				strcat(tempDiv, "}");
-			}
-			
-			Uart::send(tempDiv);
-			
-			crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
-			
-		}
-		
-		strcpy(tempDiv, "{\"crc\":");
-			
-		itoa(crc, &(tempDiv[strlen(tempDiv)]) ,16);
-			
-		strcat(tempDiv,"}");
+		send_telemetry();
 		
 	}
 	
@@ -412,11 +369,18 @@ void get_temperature_data()
 	
 }
 
-void send_state()
+void send_state(bool state) // 1 - ok, 0 - error
 {
 	
-	Uart :: send("{state:ok}");
-
+	if( state )
+	{
+		Uart :: send("{\"state\":ok}");
+	}
+	else
+	{
+		Uart :: send("{\"state\":error}");
+	}
+		
 }
 
 void init_control_pins()
@@ -455,4 +419,188 @@ uint8_t get_adc_value(uint8_t i)
 void init_adc()
 {
 	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (0<<ADPS1) | (0<<ADPS0);
+}
+
+static char tempDiv[24] = {0};
+
+void send_telemetry()
+{
+	
+	tempDiv[0] = '\0';
+	
+	// Телеметрия цифровых выводов
+	
+	if( CONTROL_PIN & (1<<VENTILATION) )
+	{
+		strcat(tempDiv, "\"vent\":1,");
+	}
+	else
+	{
+		strcat(tempDiv, "\"vent\":0,");
+	}
+	
+	Uart::send(tempDiv);
+	
+	uint32_t crc = CRC::crc32(0, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	if( CONTROL_PIN & (1<<HEATING) )
+	{
+		strcpy(tempDiv, "\"heat\":1,");
+	}
+	else
+	{
+		strcpy(tempDiv, "\"heat\":0,");
+	}
+	
+	Uart::send(tempDiv);
+	
+	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	if( CONTROL_PIN & (1<<LIGHT) )
+	{
+		strcpy(tempDiv, "\"light\":1,");
+	}
+	else
+	{
+		strcpy(tempDiv, "\"light\":0,");
+	}
+	
+	Uart::send(tempDiv);
+	
+	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	if( CONTROL_PIN & (1<<RESERVED_0) )
+	{
+		strcpy(tempDiv, "\"res0\":1,");
+	}
+	else
+	{
+		strcpy(tempDiv, "\"res0\":0,");
+	}
+	
+	Uart::send(tempDiv);
+	
+	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	if( CONTROL_PIN & (1<<RESERVED_1) )
+	{
+		strcpy(tempDiv, "\"res1\":1,");
+	}
+	else
+	{
+		strcpy(tempDiv, "\"res1\":0,");
+	}
+	
+	Uart::send(tempDiv);
+	
+	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	if( CONTROL_PIN & (1<<RESERVED_2) )
+	{
+		strcpy(tempDiv, "\"res2\":1,");
+	}
+	else
+	{
+		strcpy(tempDiv, "\"res2\":0,");
+	}
+	
+	Uart::send(tempDiv);
+	
+	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	// Данные датчиков температуры
+	
+	for( uint8_t i = 0 ; i < SENSORS_COUNT; i++ )
+	{
+		
+		if( i != 0 )
+		{
+			tempDiv[0] = '\0';
+		}
+		
+		strcat(tempDiv, "\"t\"");
+		
+		itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
+		
+		strcat(tempDiv, ":");
+		
+		dtostrf( temperatures[i].value, 5, 2, &(tempDiv[strlen(tempDiv)]) );
+		
+		strcat(tempDiv, ",");
+		
+		Uart::send(tempDiv);
+		
+		crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+		
+	}
+	
+	// Данные цифровых входов
+	
+	tempDiv[0] = '\0';
+	
+	if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_0) )
+	{
+		strcat(tempDiv, "\"d0\":1,");
+	}
+	else
+	{
+		strcat(tempDiv, "\"d0\":0,");
+	}
+	
+	if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_1) )
+	{
+		strcat(tempDiv, "\"d1\":1,");
+	}
+	else
+	{
+		strcat(tempDiv, "\"d1\":0,");
+	}
+	
+	if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_2) )
+	{
+		strcat(tempDiv, "\"d2\":1,");
+	}
+	else
+	{
+		strcat(tempDiv, "\"d2\":0,");
+	}
+	
+	Uart::send(tempDiv);
+	
+	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	for(uint8_t i = 0; i < ADC_CHANNELS; i++)
+	{
+
+		strcpy( tempDiv, "\"adc" );
+		
+		itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
+		
+		strcat( tempDiv, "\":" );
+		
+		dtostrf( get_adc_value(i) * ADC_MULTIPLIER , 5, 2, &(tempDiv[strlen(tempDiv)]) );
+		
+		if( i != ( ADC_CHANNELS - 1 ) )
+		{
+			strcat( tempDiv, "," );
+		}
+		else
+		{
+			strcat(tempDiv, "}");
+		}
+	
+		Uart::send(tempDiv);
+	
+		crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+	
+	}
+
+	strcpy(tempDiv, "{\"crc\":");
+	
+	itoa(crc, &(tempDiv[strlen(tempDiv)]) ,16);
+	
+	strcat(tempDiv,"}");
+	
+	Uart::send(tempDiv);
+	
 }

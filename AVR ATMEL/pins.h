@@ -19,6 +19,7 @@
 
 #define CONTROL_PORT PORTB
 #define CONTROL_DDR  DDRB
+#define CONTROL_PIN  PINB
 
 #define VENTILATION PB2
 #define HEATING     PB3

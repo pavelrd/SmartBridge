@@ -9,28 +9,21 @@
 #ifndef USER_TYPES_H_
 #define USER_TYPES_H_
 
-struct requests_t
+struct control_unit_t
 {
-	uint8_t ventilation       : 1;
-	uint8_t light             : 1;
-	uint8_t heating           : 1;
-	uint8_t reserved0         : 1;
-	uint8_t reserved1         : 1;
-	uint8_t reserved2         : 1;
-	uint8_t timerTick         : 1;
-	uint8_t measureProccessed : 1;
+	uint8_t counter;
+	bool isBad;
 };
 
-struct counters_t
+struct control_units
 {
-	uint8_t vent;
-	uint8_t heat;
-	uint8_t light;
-	uint8_t reserved0;
-	uint8_t reserved1;
-	uint8_t reserved2;
+	control_unit_t ventilation;
+	control_unit_t light;
+	control_unit_t heating;
+	control_unit_t reserved0;
+	control_unit_t reserved1;
+	control_unit_t reserved2;
+	control_unit_t timerTick;
 };
-
-
 
 #endif /* USER_TYPES_H_ */
