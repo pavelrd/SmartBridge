@@ -96,7 +96,7 @@ int main(void)
 		
 	while(1)
 	{
-		
+	
 		sleep_cpu();
 
 
@@ -397,7 +397,7 @@ void init_timer()
 	OCR1A   = 15625;
 	
 	TCCR1A = 0;
-	TCCR1B = (1<<WGM12) | (1<<CS10) | (1<<CS11);
+	TCCR1B = (1<<WGM12) | (1<<CS12) | (0<<CS10) | (0<<CS11); // /256
 	
 	TIMSK |= (1<<OCIE1A);
 }
