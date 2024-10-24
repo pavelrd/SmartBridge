@@ -136,7 +136,12 @@ int main(void)
 			timerTick = 0;
 			
 		}
-
+		
+		//
+		// {\"command\": ventON, \"checksum\": 0xA1B2C3D4}
+		// 
+		//
+		
 		if( !Uart::is_ready_read() )
 		{
 			continue;
@@ -598,7 +603,7 @@ void send_telemetry()
 
 	strcpy(tempDiv, "{\"crc\":");
 	
-	itoa(crc, &(tempDiv[strlen(tempDiv)]) ,16);
+	itoa(crc, &(tempDiv[strlen(tempDiv)]), 10);
 	
 	strcat(tempDiv,"}");
 	
