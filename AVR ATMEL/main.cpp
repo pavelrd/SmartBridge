@@ -603,7 +603,7 @@ void send_telemetry()
 
 	strcpy(tempDiv, "{\"crc\":");
 	
-	itoa(crc, &(tempDiv[strlen(tempDiv)]), 10);
+	utoa(crc, &(tempDiv[strlen(tempDiv)]), 10);
 	
 	strcat(tempDiv,"}");
 	
