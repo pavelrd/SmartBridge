@@ -518,19 +518,23 @@ void send_telemetry()
 			tempDiv[0] = '\0';
 		}
 		
-		strcat(tempDiv, "\"t\"");
+		if( temperatures[i].isActual )
+		{
+			strcat(tempDiv, "\"t\"");
 		
-		itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
+			itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
 		
-		strcat(tempDiv, ":");
+			strcat(tempDiv, ":");
 		
-		dtostrf( temperatures[i].value, 5, 2, &(tempDiv[strlen(tempDiv)]) );
+			dtostrf( temperatures[i].value, 5, 2, &(tempDiv[strlen(tempDiv)]) );
 		
-		strcat(tempDiv, ",");
-		
-		Uart::send(tempDiv);
-		
-		crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+			strcat(tempDiv, ",");
+			
+			Uart::send(tempDiv);
+			
+			crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
+			
+		}
 		
 	}
 	
