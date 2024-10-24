@@ -426,7 +426,7 @@ static char tempDiv[24] = {0};
 void send_telemetry()
 {
 	
-	tempDiv[0] = '\0';
+	tempDiv[0] = '{';
 	
 	// Телеметрия цифровых выводов
 	
@@ -513,18 +513,15 @@ void send_telemetry()
 	for( uint8_t i = 0 ; i < SENSORS_COUNT; i++ )
 	{
 		
-		if( i != 0 )
-		{
-			tempDiv[0] = '\0';
-		}
+		tempDiv[0] = '\0';
 		
 		if( temperatures[i].isActual )
 		{
-			strcat(tempDiv, "\"t\"");
+			strcat(tempDiv, "\"t");
 		
 			itoa( i, &(tempDiv[strlen(tempDiv)]), 10 );
 		
-			strcat(tempDiv, ":");
+			strcat(tempDiv, "\":");
 		
 			dtostrf( temperatures[i].value, 5, 2, &(tempDiv[strlen(tempDiv)]) );
 		
