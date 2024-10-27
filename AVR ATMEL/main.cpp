@@ -4,10 +4,11 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>
+#include <avr/portpins.h>
 
-#include "uart.h"
-#include "temp.h"
-#include "led.h"
+#include "Classes/uart.h"
+#include "Classes/temp.h"
+#include "Classes/led.h"
  
 #include "pins.h"
 #include "user_types.h"
@@ -51,7 +52,7 @@ static bool timerTick = false;
 
 void get_temperature_data();
 
-void send_state(bool state);
+void send_state(bool state, const char* const description=0);
 
 void execute_command(char command);
 
@@ -67,16 +68,18 @@ uint8_t get_adc_value(uint8_t i);
 
 void init_adc();
 
+// -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
+
 int main(void)
 {
-		
+	
 	init_error_messaging();
 
 	check_reset_state();
 			
 	wdt_reset();
 
-	wdt_enable(WDTO_2S);
+	wdt_enable(WDTO_2S); // WDTO_4S WDTO_8S
 		
 	init_control_pins();
 	
@@ -88,23 +91,27 @@ int main(void)
 	
 	init_adc();
 	
+	Uart::send("Program started\r\n");
+	
 	sei();
 	
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	
 	sleep_enable();
-		
+	
+	DDRD |= (1<<PD3);
+
 	while(1)
 	{
 	
 		sleep_cpu();
-
 
 		if( timerTick )
 		{
 			
 			wdt_reset();
 			
+			/*
 			if( measureProccessed )
 			{
 				get_temperature_data();
@@ -132,6 +139,7 @@ int main(void)
 				}
 				
 			}
+			*/
 
 			timerTick = 0;
 			
@@ -153,6 +161,8 @@ int main(void)
 	
 }
 
+static bool flag = false;
+	
 /**
 	@brief 
 */
@@ -160,6 +170,17 @@ int main(void)
 ISR(TIMER1_COMPA_vect)
 {
 	
+	if(flag)
+	{
+		PORTD |= (1<<PD3);
+		flag = false;
+	}
+	else
+	{
+		PORTD &= ~(1<<PD3);
+		flag = true;
+	}
+			
 	timerTick = 1;
 	
 	// Уменьшение значения счетчиков защиты
@@ -200,19 +221,19 @@ ISR(TIMER1_COMPA_vect)
 
 void off( control_unit_t* unit, uint8_t pinToOff )
 {
-	
-	if( CONTROL_PIN & (1<<pinToOff) )
+		
+	if( ! ( CONTROL_PIN & (1<<pinToOff) ) )
 	{
-		send_state(ERROR); // Нельзя исполнить команду, так как уже отключено
+		send_state(ERROR, "already off"); // Cannot be turned on, because already off / RU: Нельзя включить, слишком частый запрос
 		return;
 	}
 	
 	if( unit->isBad )
 	{
-		send_state(ERROR); // Ножка повреждена и находится в отключенном состоянии
+		send_state(ERROR, "pin corrupted"); // Pin courrupted and disabled / RU: Ножка повреждена и находится в отключенном состоянии
 		return;	
 	}
-		
+	
 	CONTROL_PORT &= ~(1 << pinToOff);
 	
 	_delay_us(100);
@@ -222,12 +243,12 @@ void off( control_unit_t* unit, uint8_t pinToOff )
 		// Не отключился!!!
 		CONTROL_DDR &= ~(1<<pinToOff);
 		unit->isBad  = true;
-		show_error(ERROR_PIN_SHORTED_TO_GND);
-		send_state(ERROR);
+		show_error(ERROR_PIN_SHORTED_TO_VCC);
+		send_state(ERROR, "shorted to VCC");
 	}
 	else
 	{
-		send_state(OK);
+		send_state(OK, "off pin ok");
 	}
 	
 }
@@ -239,9 +260,14 @@ void on( control_unit_t* unit, uint8_t pinToOn, uint8_t safeTime )
 	
 	if( CONTROL_PIN & (1<<pinToOn) )
 	{
-		send_state(ERROR); // Нельзя исполнить команду, так как уже включено
+		send_state(ERROR, "already on"); // Cannot be turned on, because already on / RU: Нельзя включить, слишком частый запрос
 	}
-	else
+	else if( unit->isBad )
+	{
+		send_state(ERROR, "pin corrupted"); // Pin courrupted and disabled / RU: Ножка повреждена и находится в отключенном состоянии
+		return;
+	}
+	else 
 	{
 		
 		asm("cli");
@@ -249,21 +275,21 @@ void on( control_unit_t* unit, uint8_t pinToOn, uint8_t safeTime )
 		if( unit->counter != 0 )
 		{
 			asm("sei");
-			send_state(ERROR); // Нельзя включить, слишком частый запрос
+			send_state(ERROR, "too often"); // Cannot be turned on, because too often request / RU: Нельзя включить, слишком частый запрос
 			return;
 		}
 		
 		unit->counter = safeTime;
 		
 		asm("sei");
-		
+				
 		CONTROL_PORT |= (1<<pinToOn);
 		
 		_delay_us(100);
 		
 		if( CONTROL_PIN & (1<<pinToOn) )
 		{
-			send_state(OK);
+			send_state(OK, "on pin ok");
 		}
 		else
 		{
@@ -271,7 +297,7 @@ void on( control_unit_t* unit, uint8_t pinToOn, uint8_t safeTime )
 			CONTROL_DDR &= ~(1<<pinToOn);
 			unit->isBad  = true;
 			show_error(ERROR_PIN_SHORTED_TO_GND);
-			send_state(ERROR);
+			send_state(ERROR, "shorted to GND");
 		}
 		
 	}
@@ -281,8 +307,6 @@ void on( control_unit_t* unit, uint8_t pinToOn, uint8_t safeTime )
 void execute_command(char command)
 {
 	
-	// Включение только по-запросу, из таймера, выключение немедленное
-
 	if( command == '1' )
 	{
 		on( &(units.ventilation), VENTILATION, VENTILATION_ON_SAFE_TIME_IN_SECONDS );
@@ -331,11 +355,15 @@ void execute_command(char command)
 	{
 		off( &(units.reserved2), RESERVED_2 );
 	}
-	else if( command == 'g' ) // Получение данных температуры и состояния порта
+	else if( command == 'g' )
 	{
 		
 		send_telemetry();
 		
+	}
+	else 
+	{
+		send_state(ERROR, "bad command");
 	}
 	
 }
@@ -374,18 +402,29 @@ void get_temperature_data()
 	
 }
 
-void send_state(bool state) // 1 - ok, 0 - error
+void send_state(bool state, const char * const description) // 1 - ok, 0 - error
 {
-	
-	if( state )
+
+	if(state == OK)
 	{
-		Uart :: send("{\"state\":ok}");
+		Uart::send("{\"state\":\"ok\"");
 	}
 	else
 	{
-		Uart :: send("{\"state\":error}");
+		Uart::send("{\"state\":\"error\"");
 	}
-		
+
+	if(description)
+	{
+		Uart :: send(",\"message\":\"");
+		Uart :: send(description);
+		Uart :: send("\"}\r\n");
+	}
+	else
+	{
+		Uart :: send("}\r\n");
+	}
+
 }
 
 void init_control_pins()
@@ -399,10 +438,10 @@ void init_timer()
 {
 	TCNT1  = 0x0000;
 	
-	OCR1A   = 15625;
+	OCR1A   = F_CPU / 1024;
 	
 	TCCR1A = 0;
-	TCCR1B = (1<<WGM12) | (1<<CS12) | (0<<CS10) | (0<<CS11); // /256
+	TCCR1B = (1<<WGM12) | (1<<CS12) | (1<<CS10) | (0<<CS11); // /1024
 	
 	TIMSK |= (1<<OCIE1A);
 }
@@ -417,7 +456,9 @@ uint8_t get_adc_value(uint8_t i)
 	while( ! ( ADCSRA & ADIF ) )
 	{}
 	
-	return ADCH;
+	uint8_t adc_result = ADCH;
+	
+	return adc_result;
 	
 }
 
@@ -605,8 +646,8 @@ void send_telemetry()
 	
 	utoa(crc, &(tempDiv[strlen(tempDiv)]), 10);
 	
-	strcat(tempDiv,"}");
+	strcat(tempDiv,"}\r\n");
 	
 	Uart::send(tempDiv);
-	
+
 }
