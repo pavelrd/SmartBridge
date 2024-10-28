@@ -7,6 +7,14 @@
 Плата AtmegaDebugBoard. Схема подключения реле, оптронов и датчиков:
 ![image](https://github.com/user-attachments/assets/4167a024-93a4-4a80-b9a8-e8c8163609b1)
 
+Command for load fuses for AtmegaDebugBoard: 
+
+avrdude.exe -c usbasp -p m16 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
+
+Command for load fuses for ArduinoNano:
+
+[in process]
+
 Protocol:
 
 Command  - 'g' - get all pin and sensors state
