@@ -10,7 +10,9 @@
 Protocol:
 
 Command  - 'g' - get all pin and sensors state
+
 Response example(without ds18b20 connected): 
+
 {'vent': 0, 'heat': 0, 'light': 0, 'res0': 0, 'res1': 0, 'res2': 0, 'd0': 1, 'd1': 0, 'd2': 1, 'adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
 {'crc': 12345 }\r\n
 
