@@ -45,12 +45,20 @@ void Uart :: init(bool isProgram_, SPEED speed )
 	else
 	{	
 		
-		uint16_t value = 25; // F_CPU --- 4 mhz, uart_speed - 9600
+		uint16_t value = 100;
 		
 		if(speed == BAUD_115200)
 		{
 			value  = 10;
 			UCSRA |= (1<<U2X); // double speed	
+		}
+		else if (speed == BAUD_9600)
+		{
+			value = 64; // (F_CPU / ((uint32_t)16*9600) ) - 1;
+		}
+		else 
+		{
+			return;
 		}
 		
 		UBRRH = value >> 8;
@@ -142,8 +150,10 @@ uint8_t Uart :: read_byte()
 		while(!byteRecieved)
 		{
 		}
-
-		return byteRecieved;
+		
+		byteRecieved = false;
+		
+		return bufferValue;
 		
 	}
 
