@@ -23,7 +23,7 @@ counter = 0
 
 while True:
     print("Test num: ", counter)
-    time.sleep(1)
+    time.sleep(0.5)
     ser.write('g'.encode('UTF-8'))
     print("-------")
     
@@ -44,7 +44,15 @@ while True:
     
     print("-------")
     ser.write('a'.encode('UTF-8'))
-    print(ser.readline())
+    
+    reasonJson = json.loads(ser.readline())
+    
+    print(reasonJson)
+    
+    if reasonJson["last_reset_reasons"] != 1:
+        print("ERROR RESETTED!")
+        exit(-1)
+    
     print("-------")
    
     testfunc('1','q')
