@@ -27,24 +27,30 @@ void show_error( enum ERROR_TYPE error )
 
 	ERROR_PORT |= (1<<ERROR_LED);
 }
-	
+
+static uint8_t lastReset = 0;
+
 void check_reset_state()
 {
 	
-	if( MCUCSR & (1<<JTRF) )
+	lastReset = MCUCSR;
+	
+	MCUCSR &= ~(1<<JTRF|1<<WDRF|1<<BORF|1<<EXTRF);
+	
+	if( lastReset & (1<<JTRF) )
 	{
 		show_error(ERROR_RESET_JTAG);
 	}
-	else if( MCUCSR & (1<<WDRF) )
+	else if( lastReset & (1<<WDRF) )
 	{
 		show_error(ERROR_RESET_WATCHDOG);
 	}
-	else if( MCUCSR & (1<<BORF) )
+	else if( lastReset & (1<<BORF) )
 	{
 		show_error(ERROR_RESET_BROWN_OUT);
 		
 	}
-	else if( MCUCSR & (1<<EXTRF) )
+	else if( lastReset & (1<<EXTRF) )
 	{
 		show_error(ERROR_RESET_EXTRF);
 	}
@@ -53,4 +59,9 @@ void check_reset_state()
 	//  Нормальный режим работы, включение питания
 	//}
 	
+}
+
+uint8_t get_last_reset_reasons()
+{
+	return lastReset;
 }
