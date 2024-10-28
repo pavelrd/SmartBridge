@@ -17,16 +17,28 @@ Response example(without ds18b20 connected):
 {'crc': 12345 }\r\n
 
 Command - '1', '2', '3', '4', '5', '6' - connect certain pin to VCC(set 1 state)
+
 Success response: {"state":"ok","message":"on pin ok"}\r\n'
-Bad responses:     
+
+Bad responses:
+
                {"state":"error","message":"already on"}\r\n'     --- pin is already in on state
+               
                {"state":"error","message":"too often"}\r\n'      --- can't be on, too often request, need wait safe time 
+               
                {"state":"error","message":"pin corrupted"}\r\n'  --- pin corrupted, on or off command has no effect and pin was disabled
+               
                {"state":"error","message":"shorted to GND"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
+               
 
 Command - 'q', 'w', 'e', 'r', 't', 'y' - connect certain pin to VCC(set 0 state)
+
 Success response: {"state":"ok","message":"off pin ok"}\r\n'
+
 Bad responses:     
+
                {"state":"error","message":"already off"}\r\n'    --- pin is already in off state
+               
                {"state":"error","message":"pin corrupted"}\r\n'  --- pin corrupted, on or off command has no effect and pin was disabled
+               
                {"state":"error","message":"shorted to VCC"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
