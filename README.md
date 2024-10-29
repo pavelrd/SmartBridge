@@ -1,21 +1,11 @@
-Программа для контроллера atmega16 предоставляет uart мост для возможности управления
-оптронами и/или реле и получения данных температуры. Также не дает возможности слишком часто 
-включать оптроны и реле, чтобы от слишком частого включения не сломалось оборудование. Это сделано
-путем настраиваемой для каждого канала в отдельности задержки перед включением. Выключение реализовано немедленно.
-В процессе разработки. 
+Program for atmega16(arduino nano coming soon) provides a uart bridge to control relay and get voltages, digital states and temperature data from several DS18B20 
 
-Плата AtmegaDebugBoard. Схема подключения реле, оптронов и датчиков:
-![image](https://github.com/user-attachments/assets/4167a024-93a4-4a80-b9a8-e8c8163609b1)
+Program also does not allow relays to be turned on too often(to prevent equipment from breaking down).
+This is done by setting a delay before switching on separately for each channel. Switching off is implemented immediately.
 
-Command for load fuses for AtmegaDebugBoard: 
+In the process of development...
 
-avrdude.exe -c usbasp -p m16 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
-
-Command for load fuses for ArduinoNano:
-
-[in process]
-
-Protocol:
+Protocol(UART, baudrate - 9600):
 
 Command  - 'g' - get all pin and sensors state
 
@@ -45,8 +35,19 @@ Success response: {"state":"ok","message":"off pin ok"}\r\n'
 
 Bad responses:     
 
+
                {"state":"error","message":"already off"}\r\n'    --- pin is already in off state
                
                {"state":"error","message":"pin corrupted"}\r\n'  --- pin corrupted, on or off command has no effect and pin was disabled
                
                {"state":"error","message":"shorted to VCC"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
+               
+Command for load fuses for AtmegaDebugBoard: 
+
+avrdude.exe -c usbasp -p m16 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
+
+Command for load fuses for ArduinoNano:
+
+[in process]
+Плата AtmegaDebugBoard. Схема подключения реле, оптронов и датчиков:
+![image](https://github.com/user-attachments/assets/4167a024-93a4-4a80-b9a8-e8c8163609b1)
