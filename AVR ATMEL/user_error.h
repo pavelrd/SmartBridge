@@ -31,4 +31,6 @@ void check_reset_state();
 
 uint8_t get_last_reset_reasons();
 
+uint32_t get_reset_counter();
+
 #endif /* USER_ERROR_H_ */
