@@ -18,23 +18,17 @@
 #define OK    0
 #define ERROR 1
 
-#define TEMPERATURE_TRY_COUNTER 5
-
-#define ADC_MULTIPLIER 0.013
-
-#define ADC_CHANNELS 8
-
-#define SENSORS_COUNT 7
+#define  ASCII_NUM_START 0x30
 
 static const uint64_t address_sensor [SENSORS_COUNT] = 
 { 
-	0x4d0215C2C64FFF28, // улица
-	0xC50215C2C664FF28, // подвал
-	0xF40215C2B504FF28, // электрощиток 1
-	0xF40215C2B504FF28, // электрощиток 2
-	0xF40215C2B504FF28, // блок управления
-	0xF40215C2B504FF28, // помещение 1
-	0xF40215C2B504FF28  // помещение 2
+	TEMPETATURE_SENSOR_0_ADDRESS,
+	TEMPETATURE_SENSOR_1_ADDRESS,
+	TEMPETATURE_SENSOR_2_ADDRESS,
+	TEMPETATURE_SENSOR_3_ADDRESS,
+	TEMPETATURE_SENSOR_4_ADDRESS,
+	TEMPETATURE_SENSOR_5_ADDRESS,
+	TEMPETATURE_SENSOR_6_ADDRESS
 };
 
 struct temperatures_t
@@ -49,6 +43,18 @@ static control_units units = {0};
 
 static bool measureProccessed = false;
 static bool timerTick = false;
+
+static const float adc_mutlipliers[8] = 
+{
+	ADC_0_MULTIPLIER,
+	ADC_1_MULTIPLIER,
+	ADC_2_MULTIPLIER,
+	ADC_3_MULTIPLIER,
+	ADC_4_MULTIPLIER,
+	ADC_5_MULTIPLIER,
+	ADC_6_MULTIPLIER,
+	ADC_7_MULTIPLIER
+};
 
 void get_temperature_data();
 
@@ -67,12 +73,13 @@ void send_telemetry();
 uint8_t get_adc_value(uint8_t i);
 
 void init_adc();
+  
+void unsignedIntegerToString( char *str, uint32_t num );
 
-// -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
-
+// 
+// C:/MicrocontrollerLibrary/utilites/avrdude-v7.2-windows-x64/avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"C:/Users/user/Desktop/Для github/SmartBridge/AVR ATMEL/Release/SmartBridge.hex":i
 int main(void)
 {
-	
 	init_error_messaging();
 
 	check_reset_state();
@@ -93,6 +100,14 @@ int main(void)
 	
 	Uart::send("Program started\r\n");
 	
+	char st[10] = {0};
+	
+	itoa(get_last_reset_reasons(), st, 10);
+	
+	Uart::send(st);
+	
+	Uart::send("\r\n");
+	
 	sei();
 	
 	set_sleep_mode(SLEEP_MODE_IDLE);
@@ -108,10 +123,9 @@ int main(void)
 
 		if( timerTick )
 		{
-			
+				
 			wdt_reset();
 			
-			/*
 			if( measureProccessed )
 			{
 				get_temperature_data();
@@ -119,7 +133,7 @@ int main(void)
 			}
 			else
 			{
-				
+								
 				for( uint8_t try_counter = 0 ; try_counter < TEMPERATURE_TRY_COUNTER; try_counter++ )
 				{
 					if ( ! DS18B20::measure() )
@@ -137,9 +151,8 @@ int main(void)
 				{
 					clear_temperature_data();
 				}
-				
+								
 			}
-			*/
 
 			timerTick = 0;
 			
@@ -219,7 +232,7 @@ ISR(TIMER1_COMPA_vect)
 
 // Выключение немедленное
 
-void off( control_unit_t* unit, uint8_t pinToOff )
+void off( control_unit_t* unit, uint8_t pinToOff, uint8_t safeTime )
 {
 		
 	if( ! ( CONTROL_PIN & (1<<pinToOff) ) )
@@ -248,6 +261,9 @@ void off( control_unit_t* unit, uint8_t pinToOff )
 	}
 	else
 	{
+		asm("cli");
+		unit->counter = safeTime;
+		asm("sei");
 		send_state(OK, "off pin ok");
 	}
 	
@@ -255,7 +271,7 @@ void off( control_unit_t* unit, uint8_t pinToOff )
 
 // Включение только через запрос!
 
-void on( control_unit_t* unit, uint8_t pinToOn, uint8_t safeTime )
+void on( control_unit_t* unit, uint8_t pinToOn )
 {
 	
 	if( CONTROL_PIN & (1<<pinToOn) )
@@ -278,9 +294,7 @@ void on( control_unit_t* unit, uint8_t pinToOn, uint8_t safeTime )
 			send_state(ERROR, "too often"); // Cannot be turned on, because too often request / RU: Нельзя включить, слишком частый запрос
 			return;
 		}
-		
-		unit->counter = safeTime;
-		
+				
 		asm("sei");
 				
 		CONTROL_PORT |= (1<<pinToOn);
@@ -309,51 +323,51 @@ void execute_command(char command)
 	
 	if( command == '1' )
 	{
-		on( &(units.ventilation), VENTILATION, VENTILATION_ON_SAFE_TIME_IN_SECONDS );
+		on( &(units.ventilation), CONTROL_0_PIN );
 	}
 	else if( command == '2' )
 	{
-		on( &(units.heating), HEATING, HEATING_ON_SAFE_TIME_IN_SECONDS );
+		on( &(units.heating), CONTROL_1_PIN );
 	}
 	else if( command == '3' )
 	{
-		on( &(units.light), LIGHT, LIGHT_ON_SAFE_TIME_IN_SECONDS );
+		on( &(units.light), CONTROL_2_PIN );
 	}
 	else if( command == '4' )
 	{
-		on( &(units.reserved0), RESERVED_0, RESERVED_0_ON_SAFE_TIME_IN_SECONDS );
+		on( &(units.reserved0), CONTROL_3_PIN );
 	}
 	else if( command == '5' )
 	{
-		on( &(units.reserved1), RESERVED_1, RESERVED_1_ON_SAFE_TIME_IN_SECONDS );
+		on( &(units.reserved1), CONTROL_4_PIN );
 	}
 	else if( command == '6' )
 	{
-		on( &(units.reserved2), RESERVED_2, RESERVED_2_ON_SAFE_TIME_IN_SECONDS );
+		on( &(units.reserved2), CONTROL_5_PIN );
 	}
 	else if( command == 'q' )
 	{
-		off( &(units.ventilation), VENTILATION );
+		off( &(units.ventilation), CONTROL_0_PIN, CONTROL_0_SAFE_TIME );
 	}
 	else if( command == 'w' )
 	{
-		off( &(units.heating), HEATING );
+		off( &(units.heating), CONTROL_1_PIN, CONTROL_1_SAFE_TIME );
 	}
 	else if( command == 'e' )
 	{
-		off( &(units.light), LIGHT );
+		off( &(units.light), CONTROL_2_PIN, CONTROL_2_SAFE_TIME );
 	}
 	else if( command == 'r' )
 	{
-		off( &(units.reserved0), RESERVED_0 );
+		off( &(units.reserved0), CONTROL_3_PIN, CONTROL_3_SAFE_TIME );
 	}
 	else if( command == 't' )
 	{
-		off( &(units.reserved1), RESERVED_1 );
+		off( &(units.reserved1), CONTROL_4_PIN, CONTROL_4_SAFE_TIME );
 	}
 	else if( command == 'y' )
 	{
-		off( &(units.reserved2), RESERVED_2 );
+		off( &(units.reserved2), CONTROL_5_PIN, CONTROL_5_SAFE_TIME );
 	}
 	else if( command == 'g' )
 	{
@@ -361,7 +375,27 @@ void execute_command(char command)
 		send_telemetry();
 		
 	}
-	else 
+	else if( command == 'a' )
+	{
+		
+		char st[10] = {0};
+		
+		itoa(get_last_reset_reasons(), st, 10);
+		
+		Uart::send("{\"last_reset_reasons\":");
+		
+		Uart::send(st);
+		
+		Uart::send(", \"reset_counter\":");
+		
+		itoa(get_reset_counter(), st, 10);
+		
+		Uart::send(st);
+		
+		Uart::send("}\r\n");
+		
+	}
+	else
 	{
 		send_state(ERROR, "bad command");
 	}
@@ -429,9 +463,9 @@ void send_state(bool state, const char * const description) // 1 - ok, 0 - error
 
 void init_control_pins()
 {
-	CONTROL_PORT &= ~( (1 << VENTILATION) | (1 << HEATING) | (1 << LIGHT) | (1<<RESERVED_0) | (1<<RESERVED_1) | (1<<RESERVED_2) );
+	CONTROL_PORT &= ~( (1 << CONTROL_0_PIN) | (1 << CONTROL_1_PIN) | (1 << CONTROL_2_PIN) | (1<<CONTROL_3_PIN) | (1<<CONTROL_4_PIN) | (1<<CONTROL_5_PIN) );
 
-	CONTROL_DDR  |= ( 1 << VENTILATION ) | (1 << HEATING) | (1 << LIGHT) | (1<<RESERVED_0) | (1<<RESERVED_1) | (1<<RESERVED_2);
+	CONTROL_DDR  |= ( 1 << CONTROL_0_PIN ) | (1 << CONTROL_1_PIN) | (1 << CONTROL_2_PIN) | (1<<CONTROL_3_PIN) | (1<<CONTROL_4_PIN) | (1<<CONTROL_5_PIN);
 }
 
 void init_timer()
@@ -471,83 +505,107 @@ static char tempDiv[24] = {0};
 
 void send_telemetry()
 {
-	
+
     strcpy(tempDiv, "{");
 	
 	// Телеметрия цифровых выводов
 	
-	if( CONTROL_PIN & (1<<VENTILATION) )
+	if( CONTROL_PIN & (1<<CONTROL_0_PIN) )
 	{
-		strcat(tempDiv, "\"vent\":1,");
+		strcat(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_0_NAME);
+		strcat(tempDiv,"\":1,");
 	}
 	else
 	{
-		strcat(tempDiv, "\"vent\":0,");
+		strcat(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_0_NAME);
+		strcat(tempDiv,"\":0,");
 	}
 	
 	Uart::send(tempDiv);
 	
 	uint32_t crc = CRC::crc32(0, (const uint8_t*) tempDiv, strlen(tempDiv));
 	
-	if( CONTROL_PIN & (1<<HEATING) )
+	if( CONTROL_PIN & (1<<CONTROL_1_PIN) )
 	{
-		strcpy(tempDiv, "\"heat\":1,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_1_NAME);
+		strcat(tempDiv,"\":1,");
 	}
 	else
 	{
-		strcpy(tempDiv, "\"heat\":0,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_1_NAME);
+		strcat(tempDiv,"\":0,");
 	}
 	
 	Uart::send(tempDiv);
 	
 	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
 	
-	if( CONTROL_PIN & (1<<LIGHT) )
+	if( CONTROL_PIN & (1<<CONTROL_2_PIN) )
 	{
-		strcpy(tempDiv, "\"light\":1,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_2_NAME);
+		strcat(tempDiv,"\":1,");
 	}
 	else
 	{
-		strcpy(tempDiv, "\"light\":0,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_2_NAME);
+		strcat(tempDiv,"\":0,");
 	}
 	
 	Uart::send(tempDiv);
 	
 	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
 	
-	if( CONTROL_PIN & (1<<RESERVED_0) )
+	if( CONTROL_PIN & (1<<CONTROL_3_PIN) )
 	{
-		strcpy(tempDiv, "\"res0\":1,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_3_NAME);
+		strcat(tempDiv,"\":1,");
 	}
 	else
 	{
-		strcpy(tempDiv, "\"res0\":0,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_3_NAME);
+		strcat(tempDiv,"\":0,");
 	}
 	
 	Uart::send(tempDiv);
 	
 	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
 	
-	if( CONTROL_PIN & (1<<RESERVED_1) )
+	if( CONTROL_PIN & (1<<CONTROL_4_PIN) )
 	{
-		strcpy(tempDiv, "\"res1\":1,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_4_NAME);
+		strcat(tempDiv,"\":1,");
 	}
 	else
 	{
-		strcpy(tempDiv, "\"res1\":0,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_4_NAME);
+		strcat(tempDiv,"\":0,");
 	}
 	
 	Uart::send(tempDiv);
 	
 	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
 	
-	if( CONTROL_PIN & (1<<RESERVED_2) )
+	if( CONTROL_PIN & (1<<CONTROL_5_PIN) )
 	{
-		strcpy(tempDiv, "\"res2\":1,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_5_NAME);
+		strcat(tempDiv,"\":1,");
 	}
 	else
 	{
-		strcpy(tempDiv, "\"res2\":0,");
+		strcpy(tempDiv, "\"");
+		strcat(tempDiv, CONTROL_5_NAME);
+		strcat(tempDiv,"\":0,");
 	}
 	
 	Uart::send(tempDiv);
@@ -625,7 +683,7 @@ void send_telemetry()
 		
 		strcat( tempDiv, "\":" );
 		
-		dtostrf( get_adc_value(i) * ADC_MULTIPLIER , 5, 2, &(tempDiv[strlen(tempDiv)]) );
+		dtostrf( get_adc_value(i) * adc_mutlipliers[i], 5, 2, &(tempDiv[strlen(tempDiv)]) );
 		
 		if( i != ( ADC_CHANNELS - 1 ) )
 		{
@@ -642,12 +700,154 @@ void send_telemetry()
 	
 	}
 
-	strcpy(tempDiv, "{\"crc\":");
+	strcpy(tempDiv, "\r\n{\"crc\":");
 	
-	utoa(crc, &(tempDiv[strlen(tempDiv)]), 10);
+	unsignedIntegerToString( &(tempDiv[strlen(tempDiv)]), crc );
 	
 	strcat(tempDiv,"}\r\n");
 	
 	Uart::send(tempDiv);
+
+}
+
+void unsignedIntegerToString( char *str, uint32_t num )
+{
+
+	uint8_t pt = 0;
+
+	uint8_t flag = 0;
+
+	if( num >= 1000000000 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 1000000000)
+		{
+			num -= 1000000000;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+	
+	if( 1 == flag || num >= 100000000 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 100000000)
+		{
+			num -= 100000000;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	if( 1 == flag || num >= 10000000 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 10000000)
+		{
+			num -= 10000000;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	if( 1 == flag || num >= 1000000 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 1000000)
+		{
+			num -= 1000000;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	if( 1 == flag || num >= 100000 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 100000)
+		{
+			num -= 100000;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	if( 1 == flag || num >= 10000 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 10000)
+		{
+			num -= 10000;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	if( 1 == flag || num >= 1000 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 1000)
+		{
+			num -= 1000;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	if( 1 == flag || num >= 100 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 100)
+		{
+			num -= 100;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	if( 1 == flag || num >= 10 )
+	{
+		flag = 1;
+		uint8_t dec = 0;
+		while(num >= 10)
+		{
+			num -= 10;
+			dec += 1;
+		}
+		str[pt] = dec;
+		str[pt] += ASCII_NUM_START;
+		pt += 1;
+	}
+
+	str[pt] = num;
+	str[pt] += ASCII_NUM_START;
+
+	pt += 1;
+	
+	str[pt] = '\0';
 
 }
