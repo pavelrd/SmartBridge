@@ -28,14 +28,15 @@ void show_error( enum ERROR_TYPE error )
 	ERROR_PORT |= (1<<ERROR_LED);
 }
 
-static uint8_t lastReset = 0;
+static uint8_t  lastReset = 0;
+static uint32_t resetCounter __attribute__ ((section (".noinit")));
 
 void check_reset_state()
 {
 	
 	lastReset = MCUCSR;
-	
-	MCUCSR &= ~(1<<JTRF|1<<WDRF|1<<BORF|1<<EXTRF);
+		
+	MCUCSR &= ~(1<<JTRF|1<<WDRF|1<<BORF|1<<EXTRF|1<<PORF);
 	
 	if( lastReset & (1<<JTRF) )
 	{
@@ -54,14 +55,26 @@ void check_reset_state()
 	{
 		show_error(ERROR_RESET_EXTRF);
 	}
-	//else if( MCUCSR & PORF )
-	//{
-	//  Нормальный режим работы, включение питания
-	//}
 	
+	if( lastReset & (1<<PORF) )
+	{
+		// First power on
+		resetCounter = 0;
+	}
+	else
+	{
+		// Reboot while power is on(watchdog, jtag, external reset)
+		resetCounter += 1;	
+	}
+
 }
 
 uint8_t get_last_reset_reasons()
 {
 	return lastReset;
+}
+
+uint32_t get_reset_counter()
+{
+	return resetCounter;
 }
