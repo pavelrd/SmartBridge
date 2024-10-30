@@ -44,7 +44,7 @@ Bad responses:
                
 Command for load fuses for AtmegaDebugBoard: 
 
-avrdude.exe -c usbasp -p m16 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
+avrdude.exe -c usbasp -p m16 -U lfuse:w:0x3f:m -U hfuse:w:0xd9:m
 
 Command for load fuses for ArduinoNano:
 
