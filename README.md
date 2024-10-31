@@ -46,7 +46,7 @@ Bad responses:
                
                {"state":"error","message":"shorted to VCC"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
                
-Command for load fuses for AtmegaDebugBoard: 
+Command for load fuses for arduino nano: 
 
 avrdude.exe -c usbasp -p m328 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
 
