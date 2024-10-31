@@ -1,11 +1,21 @@
-Program for atmega16(arduino nano coming soon) provides a uart bridge to control relay and get voltages, digital states and temperature data from several DS18B20 
+In the process of development...
+
+Program for arduino nano provides a uart bridge to control relay and get voltages, digital states and temperature data from several DS18B20 
 
 Program also does not allow relays to be turned on too often(to prevent equipment from breaking down).
 This is done by setting a delay before switching on separately for each channel. Switching off is implemented immediately.
 
-In the process of development...
+Connection circuit:
 
-Protocol(UART, baudrate - 9600):
+![image](https://github.com/user-attachments/assets/4f47a603-d2b1-42dd-b7e9-972971a49ad5)
+
+Programming:
+
+avrdude.exe -c usbasp -p m328 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
+
+Protocol:
+
+UART, baudrate - 9600
 
 Command  - 'g' - get all pin and sensors state
 
@@ -46,14 +56,3 @@ Bad responses:
                
                {"state":"error","message":"shorted to VCC"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
                
-Command for load fuses for arduino nano: 
-
-avrdude.exe -c usbasp -p m328 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
-
-Command for load fuses for ArduinoNano:
-
-[in process]
-![image](https://github.com/user-attachments/assets/4f47a603-d2b1-42dd-b7e9-972971a49ad5)
-
-
-
