@@ -9,6 +9,8 @@ Connection circuit:
 
 ![image](https://github.com/user-attachments/assets/4f47a603-d2b1-42dd-b7e9-972971a49ad5)
 
+Python telegram bot:
+
 Programming:
 
 avrdude.exe -c usbasp -p m328 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
