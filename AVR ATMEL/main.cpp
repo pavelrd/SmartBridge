@@ -76,6 +76,8 @@ void init_adc();
   
 void unsignedIntegerToString( char *str, uint32_t num );
 
+void init_digital_pins();
+
 // 
 // C:/MicrocontrollerLibrary/utilites/avrdude-v7.2-windows-x64/avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"C:/Users/user/Desktop/Для github/SmartBridge/AVR ATMEL/Release/SmartBridge.hex":i
 int main(void)
