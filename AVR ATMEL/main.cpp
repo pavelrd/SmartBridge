@@ -6,9 +6,9 @@
 #include <avr/wdt.h>
 #include <avr/portpins.h>
 
-#include "Classes/uart.h"
-#include "Classes/temp.h"
-#include "Classes/led.h"
+#include "uart.h"
+#include "temp.h"
+#include "led.h"
  
 #include "pins.h"
 #include "user_types.h"
@@ -90,7 +90,7 @@ int main(void)
 		
 	init_control_pins();
 	
-	DS18B20::init_temp(TEMPERATURE);
+	DS18B20::init_temp(TEMPERATURE_PIN_0);
 	
 	Uart :: init( false, Uart::BAUD_9600 );
 	
@@ -114,8 +114,6 @@ int main(void)
 	
 	sleep_enable();
 	
-	DDRD |= (1<<PD3);
-
 	while(1)
 	{
 	
@@ -173,8 +171,6 @@ int main(void)
 	}
 	
 }
-
-static bool flag = false;
 	
 /**
 	@brief 
@@ -182,18 +178,7 @@ static bool flag = false;
 
 ISR(TIMER1_COMPA_vect)
 {
-	
-	if(flag)
-	{
-		PORTD |= (1<<PD3);
-		flag = false;
-	}
-	else
-	{
-		PORTD &= ~(1<<PD3);
-		flag = true;
-	}
-			
+
 	timerTick = 1;
 	
 	// Уменьшение значения счетчиков защиты
@@ -643,7 +628,7 @@ void send_telemetry()
 	
 	tempDiv[0] = '\0';
 	
-	if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_0) )
+	if( DIGITAL_SENSORS_PIN & (1<<DIGITAL_SENSORS_PIN_0) )
 	{
 		strcat(tempDiv, "\"d0\":1,");
 	}
@@ -652,7 +637,7 @@ void send_telemetry()
 		strcat(tempDiv, "\"d0\":0,");
 	}
 	
-	if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_1) )
+	if( DIGITAL_SENSORS_PIN & (1<<DIGITAL_SENSORS_PIN_1) )
 	{
 		strcat(tempDiv, "\"d1\":1,");
 	}
@@ -661,7 +646,7 @@ void send_telemetry()
 		strcat(tempDiv, "\"d1\":0,");
 	}
 	
-	if( DIGITAL_SENSORS_PORT_PIN & (1<<DIGITAL_SENSORS_PIN_2) )
+	if( DIGITAL_SENSORS_PIN & (1<<DIGITAL_SENSORS_PIN_2) )
 	{
 		strcat(tempDiv, "\"d2\":1,");
 	}
