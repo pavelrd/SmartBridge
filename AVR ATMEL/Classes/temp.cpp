@@ -28,7 +28,7 @@ bool DS18B20 :: checkready_temperature()
 	
 	// Проверяем что на линии нет КЗ на землю(не ноль)
 	
-	if( ! ( TEMPERATURE_PIN_0 & (1<<pinNumber) ) )
+	if( ! ( TEMPERATURE_PIN & (1<<pinNumber) ) )
 	{
 		return false;
 	}
@@ -38,7 +38,7 @@ bool DS18B20 :: checkready_temperature()
 	TEMPERATURE_DDR &= ~(1 << pinNumber); // отпускаeм шину
 	_delay_us(70);
 	
-	if( ! ( TEMPERATURE_PIN_0 & (1 << pinNumber) ) ) // Шина в нуле после отпускания, есть устройства
+	if( ! ( TEMPERATURE_PIN & (1 << pinNumber) ) ) // Шина в нуле после отпускания, есть устройства
 	{	
 		_delay_ms(1);
 		return true;
@@ -84,7 +84,7 @@ uint8_t DS18B20 :: read_bit()
 	TEMPERATURE_DDR &= ~(1 << pinNumber);
 	_delay_us(4);
 	
-	if(PINB & 1<< pinNumber)
+	if(TEMPERATURE_PIN & 1 << pinNumber)
 	{
 		_delay_us(61);
 		return 1;
