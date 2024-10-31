@@ -143,6 +143,7 @@ int main(void)
 						measureProccessed = true;
 						break;
 					}
+					_delay_ms(10);
 				}
 				
 				if( !measureProccessed )
