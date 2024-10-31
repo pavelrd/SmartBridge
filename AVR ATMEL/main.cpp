@@ -80,16 +80,19 @@ void unsignedIntegerToString( char *str, uint32_t num );
 // C:/MicrocontrollerLibrary/utilites/avrdude-v7.2-windows-x64/avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"C:/Users/user/Desktop/Для github/SmartBridge/AVR ATMEL/Release/SmartBridge.hex":i
 int main(void)
 {
-	init_error_messaging();
 
 	check_reset_state();
 			
 	wdt_reset();
 
 	wdt_enable(WDTO_2S); // WDTO_4S WDTO_8S
-		
+	
 	init_control_pins();
 	
+	init_digital_pins();
+	
+	init_error_messaging();
+		
 	DS18B20::init_temp(TEMPERATURE_PIN_0);
 	
 	Uart :: init( false, Uart::BAUD_9600 );
@@ -445,6 +448,15 @@ void send_state(bool state, const char * const description) // 1 - ok, 0 - error
 		Uart :: send("}\r\n");
 	}
 
+}
+
+void init_digital_pins()
+{
+	
+	DIGITAL_SENSORS_DDR  &= ~((1<<DIGITAL_SENSORS_PIN_0)|(1<<DIGITAL_SENSORS_PIN_1)|(1<<DIGITAL_SENSORS_PIN_2));
+	
+	DIGITAL_SENSORS_PORT &= ~((1<<DIGITAL_SENSORS_PIN_0)|(1<<DIGITAL_SENSORS_PIN_1)|(1<<DIGITAL_SENSORS_PIN_2));
+	
 }
 
 void init_control_pins()
