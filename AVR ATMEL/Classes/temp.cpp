@@ -10,19 +10,17 @@
 #include "temp.h"
 #include "uart.h"
 
-#include <stdlib.h>
+#include "pins.h"
 
-#define TEMP_PORT_DDR  DDRB
-#define TEMP_PORT_PORT PORTB
-#define TEMP_PORT_PIN  PINB
+#include <stdlib.h>
 
 uint8_t DS18B20::pinNumber = 0;
 
 void DS18B20 :: init_temp( uint8_t _pinNumber )
 {
 	pinNumber = _pinNumber;
-	TEMP_PORT_DDR &= ~(1 << pinNumber);
-	TEMP_PORT_PORT &= ~(1 << pinNumber);
+	TEMPERATURE_DDR &= ~(1 << pinNumber);
+	TEMPERATURE_PORT &= ~(1 << pinNumber);
 }
 
 bool DS18B20 :: checkready_temperature()
@@ -30,17 +28,17 @@ bool DS18B20 :: checkready_temperature()
 	
 	// Проверяем что на линии нет КЗ на землю(не ноль)
 	
-	if( ! ( TEMP_PORT_PIN & (1<<pinNumber) ) )
+	if( ! ( TEMPERATURE_PIN_0 & (1<<pinNumber) ) )
 	{
 		return false;
 	}
 	
-	TEMP_PORT_DDR |= 1 << pinNumber; // устанавливаем шину в ноль
+	TEMPERATURE_DDR |= 1 << pinNumber; // устанавливаем шину в ноль
 	_delay_us(490);
-	TEMP_PORT_DDR &= ~(1 << pinNumber); // отпускаeм шину
+	TEMPERATURE_DDR &= ~(1 << pinNumber); // отпускаeм шину
 	_delay_us(70);
 	
-	if( ! ( PINB & (1 << pinNumber) ) ) // Шина в нуле после отпускания, есть устройства
+	if( ! ( TEMPERATURE_PIN_0 & (1 << pinNumber) ) ) // Шина в нуле после отпускания, есть устройства
 	{	
 		_delay_ms(1);
 		return true;
@@ -55,8 +53,8 @@ void DS18B20 :: write_bit(uint8_t bit)
 {
 	switch(bit)
 	{
-		case 0: TEMP_PORT_DDR |= 1 << pinNumber; _delay_us(60); TEMP_PORT_DDR &= ~(1 << pinNumber); break;
-		case 1: TEMP_PORT_DDR |= 1 << pinNumber; _delay_us(15); TEMP_PORT_DDR &= ~(1 << pinNumber); _delay_us(45); break;
+		case 0: TEMPERATURE_DDR |= 1 << pinNumber; _delay_us(60); TEMPERATURE_DDR &= ~(1 << pinNumber); break;
+		case 1: TEMPERATURE_DDR |= 1 << pinNumber; _delay_us(15); TEMPERATURE_DDR &= ~(1 << pinNumber); _delay_us(45); break;
 	}
 	_delay_us(10);
 }
@@ -81,9 +79,9 @@ void DS18B20 :: write_byte (uint8_t byte)
 
 uint8_t DS18B20 :: read_bit()
 {
-	TEMP_PORT_DDR |= 1 << pinNumber;
+	TEMPERATURE_DDR |= 1 << pinNumber;
 	_delay_us(2);
-	TEMP_PORT_DDR &= ~(1 << pinNumber);
+	TEMPERATURE_DDR &= ~(1 << pinNumber);
 	_delay_us(4);
 	
 	if(PINB & 1<< pinNumber)
