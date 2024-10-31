@@ -49,5 +49,5 @@ avrdude.exe -c usbasp -p m16 -U lfuse:w:0x3f:m -U hfuse:w:0xd9:m
 Command for load fuses for ArduinoNano:
 
 [in process]
-Плата AtmegaDebugBoard. Схема подключения реле, оптронов и датчиков:
-![image](https://github.com/user-attachments/assets/4167a024-93a4-4a80-b9a8-e8c8163609b1)
+![image](https://github.com/user-attachments/assets/d4554ee4-bd03-4e85-9d48-b60d2b09ace3)
+
