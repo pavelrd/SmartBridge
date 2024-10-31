@@ -123,8 +123,18 @@ bool DS18B20::measure()
 		
 		write_byte(CONVERT_TEMPERATURE);
 		
-		return true;
+		_delay_ms(1);
 		
+		if( !read_bit() )
+		{
+			// read is null, measure is processed
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+				
 	}
 	else 
 	{
@@ -132,13 +142,6 @@ bool DS18B20::measure()
 		return false;
 		
 	}
-	
-	/*
-	while( !read_bit() )
-	{
-		_delay_ms(50);
-	}
-	*/
 	
 }
 
