@@ -26,6 +26,8 @@ public:
 	static bool    is_ready_read();
 private:
 	static bool isProgram;
+	static uint8_t buffer[16];
+	static uint8_t bufferIndex;
 };
 
 #endif /* UART_H_ */

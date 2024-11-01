@@ -323,10 +323,6 @@ void execute_command(char command)
 	{
 		on( &(units.reserved1), CONTROL_4_PIN );
 	}
-	else if( command == '6' )
-	{
-		on( &(units.reserved2), CONTROL_5_PIN );
-	}
 	else if( command == 'q' )
 	{
 		off( &(units.ventilation), CONTROL_0_PIN, CONTROL_0_SAFE_TIME );
@@ -346,10 +342,6 @@ void execute_command(char command)
 	else if( command == 't' )
 	{
 		off( &(units.reserved1), CONTROL_4_PIN, CONTROL_4_SAFE_TIME );
-	}
-	else if( command == 'y' )
-	{
-		off( &(units.reserved2), CONTROL_5_PIN, CONTROL_5_SAFE_TIME );
 	}
 	else if( command == 'g' )
 	{
@@ -461,9 +453,9 @@ void init_digital_pins()
 
 void init_control_pins()
 {
-	CONTROL_PORT &= ~( (1 << CONTROL_0_PIN) | (1 << CONTROL_1_PIN) | (1 << CONTROL_2_PIN) | (1<<CONTROL_3_PIN) | (1<<CONTROL_4_PIN) | (1<<CONTROL_5_PIN) );
+	CONTROL_PORT &= ~( (1 << CONTROL_0_PIN) | (1 << CONTROL_1_PIN) | (1 << CONTROL_2_PIN) | (1<<CONTROL_3_PIN) | (1<<CONTROL_4_PIN) );
 
-	CONTROL_DDR  |= ( 1 << CONTROL_0_PIN ) | (1 << CONTROL_1_PIN) | (1 << CONTROL_2_PIN) | (1<<CONTROL_3_PIN) | (1<<CONTROL_4_PIN) | (1<<CONTROL_5_PIN);
+	CONTROL_DDR  |= ( 1 << CONTROL_0_PIN ) | (1 << CONTROL_1_PIN) | (1 << CONTROL_2_PIN) | (1<<CONTROL_3_PIN) | (1<<CONTROL_4_PIN);
 }
 
 void init_timer()
@@ -475,7 +467,7 @@ void init_timer()
 	TCCR1A = 0;
 	TCCR1B = (1<<WGM12) | (1<<CS12) | (1<<CS10) | (0<<CS11); // /1024
 	
-	TIMSK |= (1<<OCIE1A);
+	TIMSK0 |= (1<<OCIE1A);
 }
 
 uint8_t get_adc_value(uint8_t i)
@@ -592,24 +584,7 @@ void send_telemetry()
 	Uart::send(tempDiv);
 	
 	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
-	
-	if( CONTROL_PIN & (1<<CONTROL_5_PIN) )
-	{
-		strcpy(tempDiv, "\"");
-		strcat(tempDiv, CONTROL_5_NAME);
-		strcat(tempDiv,"\":1,");
-	}
-	else
-	{
-		strcpy(tempDiv, "\"");
-		strcat(tempDiv, CONTROL_5_NAME);
-		strcat(tempDiv,"\":0,");
-	}
-	
-	Uart::send(tempDiv);
-	
-	crc = CRC::crc32(crc, (const uint8_t*) tempDiv, strlen(tempDiv));
-	
+		
 	// Данные датчиков температуры
 	
 	for( uint8_t i = 0 ; i < SENSORS_COUNT; i++ )

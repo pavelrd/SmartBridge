@@ -50,7 +50,7 @@ void Uart :: init(bool isProgram_, SPEED speed )
 		if(speed == BAUD_115200)
 		{
 			value  = 10;
-			UCSRA |= (1<<U2X); // double speed	
+			UCSR0A |= (1<<U2X0); // double speed	
 		}
 		else if (speed == BAUD_9600)
 		{
@@ -61,12 +61,12 @@ void Uart :: init(bool isProgram_, SPEED speed )
 			return;
 		}
 		
-		UBRRH = value >> 8;
-		UBRRL = value; // 65
+		UBRR0H = value >> 8;
+		UBRR0L = value; // 65
 		
 		// UCSRA = 0;
 		
-		UCSRB = (1<<RXEN) | (1<<TXEN) | (1<<RXCIE);
+		UCSR0B = (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
 		
 		// UCSRC = 0;
 		// UCSRC = (1<<URSEL)|(0<<USBS)|(3<<UCSZ0);
@@ -105,11 +105,11 @@ void Uart :: send_byte (uint8_t byteToSend)
 	else
 	{
 		
-		while(!(UCSRA & (1 << UDRE)))
+		while(!(UCSR0A & (1 << UDRE0)))
 		{
 		}
 
-		UDR = byteToSend;
+		UDR0 = byteToSend;
 		
 	}
 	
@@ -196,6 +196,9 @@ void Uart :: send (uint64_t byteToSend)
 
 ISR(USART_RXC_vect)
 {
-	bufferValue  = UDR;
+	bufferValue  = UDR0;
 	byteRecieved = true;
 }
+
+uint8_t Uart::buffer[16] = {0};
+uint8_t Uart::bufferIndex = 0;

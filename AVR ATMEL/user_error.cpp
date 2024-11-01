@@ -36,15 +36,11 @@ static uint32_t resetCounter __attribute__ ((section (".noinit")));
 void check_reset_state()
 {
 	
-	lastReset = MCUCSR;
+	lastReset = MCUSR;
 		
-	MCUCSR &= ~(1<<JTRF|1<<WDRF|1<<BORF|1<<EXTRF|1<<PORF);
+	MCUSR &= ~(1<<WDRF|1<<BORF|1<<EXTRF|1<<PORF);
 	
-	if( lastReset & (1<<JTRF) )
-	{
-		show_error(ERROR_RESET_JTAG);
-	}
-	else if( lastReset & (1<<WDRF) )
+	if( lastReset & (1<<WDRF) )
 	{
 		show_error(ERROR_RESET_WATCHDOG);
 	}
