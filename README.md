@@ -5,6 +5,16 @@ Program for arduino nano provides a uart bridge to control relay and get voltage
 Program also does not allow relays to be turned on too often(to prevent equipment from breaking down).
 This is done by setting a delay before switching on separately for each channel. Switching off is implemented immediately.
 
+
+For control[0-2] minimum interval between on is 20 second
+For control[3-4] minimum interval between on is 180 second
+For adc[0-7] multiplier for output is 1, show voltage as is
+Sensors number is 1, address not used. Get temperature without use address.
+Control names in json file is in c[0-4]
+
+This paratemets can be changed in file AVR_ATMEL/pins.h
+
+
 Connection circuit:
 
 ![image](https://github.com/user-attachments/assets/4f47a603-d2b1-42dd-b7e9-972971a49ad5)
