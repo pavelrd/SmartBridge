@@ -23,12 +23,12 @@
 static const uint64_t address_sensor [SENSORS_COUNT] = 
 { 
 	TEMPETATURE_SENSOR_0_ADDRESS,
-	TEMPETATURE_SENSOR_1_ADDRESS,
-	TEMPETATURE_SENSOR_2_ADDRESS,
-	TEMPETATURE_SENSOR_3_ADDRESS,
-	TEMPETATURE_SENSOR_4_ADDRESS,
-	TEMPETATURE_SENSOR_5_ADDRESS,
-	TEMPETATURE_SENSOR_6_ADDRESS
+	//TEMPETATURE_SENSOR_1_ADDRESS,
+	//TEMPETATURE_SENSOR_2_ADDRESS,
+	//TEMPETATURE_SENSOR_3_ADDRESS,
+	//TEMPETATURE_SENSOR_4_ADDRESS,
+	//TEMPETATURE_SENSOR_5_ADDRESS,
+	//TEMPETATURE_SENSOR_6_ADDRESS
 };
 
 struct temperatures_t
@@ -391,18 +391,18 @@ void clear_temperature_data()
 	}
 	
 }
-// Утверждение нового значения только через 4 раза
+
 void get_temperature_data()
 {
 	
 	clear_temperature_data();
-
-	for(int i = 0; i < 1; i++)
+	
+	for(int i = 0; i < SENSORS_COUNT; i++)
 	{
 
 		float temperature = 0;
-		
-		if( DS18B20::get_temperature(0, &temperature) ) // address_sensor[i]
+
+		if( DS18B20::get_temperature( SENSORS_COUNT == 1  ? 0 : address_sensor[i], &temperature) ) // 
 		{
 			temperatures[i].value    = temperature;
 			temperatures[i].isActual = true;
