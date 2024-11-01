@@ -12,7 +12,7 @@ For control[3-4] minimum interval between on is 180 second
 
 For adc[0-7] multiplier for output is 1, show voltage as is
 
-Sensors number is 1, address not used. Get temperature without use address.
+DS18B20 temperature sensors number is 1, address not used. Get temperature without use address.
 
 Control names in json output is in c[0-4]
 
