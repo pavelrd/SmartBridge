@@ -30,6 +30,10 @@ Programming:
 
 avrdude.exe -c usbasp -p m328 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
 
+Programmer: https://aliexpress.ru/wholesale?SearchText=usbasp --- need 10 pin to 6 pin adapter
+              
+Avrdude: https://github.com/avrdudes/avrdude
+
 Protocol:
 
 UART, baudrate - 9600
