@@ -52,7 +52,11 @@ Response example(with 5 DS18B20 connected):
 
 Command - '1', '2', '3', '4', '5' - connect certain pin to VCC(set 1 state)
 
-Success response: {"state":"ok","message":"on pin ok"}\r\n'
+Success response: 
+
+
+{"state":"ok","message":"on pin ok"}\r\n'
+
 
 Bad responses:
 
