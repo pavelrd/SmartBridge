@@ -76,6 +76,32 @@ void DS18B20 :: write_byte (uint8_t byte)
 	}
 }
 
+bool DS18B20 :: write_byte_match (uint8_t byte)
+{
+	for(int i = 0; i < 8; i++)
+	{
+		// (byte & 0x01) ? write_bit(1) : write_bit(0);
+		if(byte & 0x01)
+		{
+			write_bit(1);
+			if( !read_bit() )
+			{
+				return false;
+			}
+		}
+		else
+		{
+			write_bit(0);
+			if( read_bit() )
+			{
+				return false;
+			}
+		}
+		byte >>= 1;
+	}
+	return true;
+}
+
 
 uint8_t DS18B20 :: read_bit()
 {
@@ -186,77 +212,41 @@ bool DS18B20 :: get_temperature(uint64_t address, float *temperature)
 {
 	
 	// Получение значения температуры
-	
-	uint8_t scratchpad[9] = {0};
-	
-	for(int try_count = 0; try_count < 4; try_count++) // Повторное чтение, 4 раза, чтобы вероянтность пропуска ошибки была 1 к 2^32. Так как контрольная сумма при передаче от датчика
-	{                                                  // 2^8
 		
-		if ( !checkready_temperature() )
-		{
-			break;
-		}
+	if ( !checkready_temperature() )
+	{
+		return 0;
+	}
 		
-		if( address == 0 )
+	if( address == 0 )
+	{
+		write_byte(SKIP_ROM);
+	}
+	else
+	{
+		write_byte(MATCH_ROM);
+		for(int i = 0; i < 8 ; i++)
 		{
-			write_byte(SKIP_ROM);
-		}
-		else
-		{
-			write_byte(MATCH_ROM);
-			for(int i = 0; i < 8 ; i++)
+			if( ! write_byte_match(address & 0xFF) )
 			{
-				write_byte(address & 0xFF);
-				address >>= 8;
+				return false;
 			}
+			address >>= 8;
 		}
+	}
 		
-		write_byte(READ_SCRATCHPAD);
-		
-		if( try_count == 0 )
-		{
-			
-			Uart::send("\r\nFirst scratchpad: ");
-			
-			for( int i = 0; i < 9; i++ )
-			{
-				scratchpad[i] = read_byte();
-				
-				char str[16] = {0};
-					
-				itoa(scratchpad[i], str, 16);
-				Uart::send( str );
-				Uart::send( " " );
-				
-			}
-			
-			Uart::send(" \r\n");
+	write_byte(READ_SCRATCHPAD);
 
-			if( crc8(scratchpad, 9) != 0 )
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			
-			Uart::send("Second scratchpad: ");
-	
-			for(int j = 0; j < 9; j++)
-			{
-							
-				uint8_t readed_byte = read_byte() ;
-			
-				char str[16] = {0};
-					
-				itoa(readed_byte, str, 16);
-				Uart::send( str );
-				Uart::send(" ");
-				
-			}
-			
-			Uart::send("\r\n");
-		}
+	uint8_t scratchpad[9] = {0};
+
+	for( int i = 0; i < 9; i++ )
+	{
+		scratchpad[i] = read_byte();
+	}
+
+	if( crc8(scratchpad, 9) != 0 )
+	{
+		return 0;
 	}
 		
 	uint8_t first_byte  = scratchpad[0]; // ls byte

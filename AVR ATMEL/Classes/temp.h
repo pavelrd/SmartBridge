@@ -36,7 +36,8 @@ public:
 		static void init_temp(uint8_t _pinNumber); 
 		static bool checkready_temperature(); 
 		static void write_bit(uint8_t byte); 
-		static void write_byte (uint8_t byte); 
+		static void write_byte (uint8_t byte);
+		static bool write_byte_match (uint8_t byte);
 		static uint8_t read_bit(); 
 		static uint8_t read_byte(); 
 		static bool measure();
