@@ -38,12 +38,17 @@ Command  - 'g' - get all pin and sensors state
 
 Response example(without ds18b20 connected): 
 
+
 {'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
 {'crc': 12345 }\r\n
 
+
 Response example(with 5 DS18B20 connected):
+
+
 {'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 't0' : 22.1, 't1' : 22.2, 't2' : 22.3, 't3' : 22.7, 't4' : 22.1, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
 {'crc': 12345 }\r\n
+
 
 Command - '1', '2', '3', '4', '5' - connect certain pin to VCC(set 1 state)
 
