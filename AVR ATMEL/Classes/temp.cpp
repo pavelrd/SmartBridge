@@ -76,33 +76,6 @@ void DS18B20 :: write_byte (uint8_t byte)
 	}
 }
 
-bool DS18B20 :: write_byte_match (uint8_t byte)
-{
-	for(int i = 0; i < 8; i++)
-	{
-		// (byte & 0x01) ? write_bit(1) : write_bit(0);
-		if(byte & 0x01)
-		{
-			write_bit(1);
-			if( !read_bit() )
-			{
-				return false;
-			}
-		}
-		else
-		{
-			write_bit(0);
-			if( read_bit() )
-			{
-				return false;
-			}
-		}
-		byte >>= 1;
-	}
-	return true;
-}
-
-
 uint8_t DS18B20 :: read_bit()
 {
 	asm("cli");
@@ -227,10 +200,7 @@ bool DS18B20 :: get_temperature(uint64_t address, float *temperature)
 		write_byte(MATCH_ROM);
 		for(int i = 0; i < 8 ; i++)
 		{
-			if( ! write_byte_match(address & 0xFF) )
-			{
-				return false;
-			}
+			write_byte(address & 0xFF);
 			address >>= 8;
 		}
 	}
@@ -243,10 +213,15 @@ bool DS18B20 :: get_temperature(uint64_t address, float *temperature)
 	{
 		scratchpad[i] = read_byte();
 	}
-
+	
+	if( (scratchpad[0] == 255) && (scratchpad[1] == 255) )
+	{
+		return false;
+	}
+	
 	if( crc8(scratchpad, 9) != 0 )
 	{
-		return 0;
+		return false;
 	}
 		
 	uint8_t first_byte  = scratchpad[0]; // ls byte
@@ -256,10 +231,10 @@ bool DS18B20 :: get_temperature(uint64_t address, float *temperature)
 	
 	if( ( *temperature < -55 ) || ( *temperature > 125 ) )
 	{
-		return 0;
+		return false;
 	}
 	
-	return 1;
+	return true;
 	
 }
 

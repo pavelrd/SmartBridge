@@ -37,13 +37,12 @@ public:
 		static bool checkready_temperature(); 
 		static void write_bit(uint8_t byte); 
 		static void write_byte (uint8_t byte);
-		static bool write_byte_match (uint8_t byte);
 		static uint8_t read_bit(); 
 		static uint8_t read_byte(); 
 		static bool measure();
 		static bool get_temperature(uint64_t address=0, float *temperature=0);
 		void set_accuracy( enum ACCURACY accuracy );
-		uint64_t get_address();
+		static uint64_t get_address();
 };
 
 #endif
