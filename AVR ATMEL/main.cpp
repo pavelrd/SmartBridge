@@ -78,7 +78,7 @@ void unsignedIntegerToString( char *str, uint32_t num );
 
 void init_digital_pins();
 
-// 
+// 15,4 кбит/с. 1925 кб сек
 // C:/MicrocontrollerLibrary/utilites/avrdude-v7.2-windows-x64/avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"C:/Users/user/Desktop/Для github/SmartBridge/AVR ATMEL/Release/SmartBridge.hex":i
 int main(void)
 {
@@ -102,16 +102,6 @@ int main(void)
 	init_timer();
 	
 	init_adc();
-	
-	Uart::send("Program started\r\n");
-	
-	char st[10] = {0};
-	
-	itoa(get_last_reset_reasons(), st, 10);
-	
-	Uart::send(st);
-	
-	Uart::send("\r\n");
 	
 	sei();
 	
@@ -158,6 +148,7 @@ int main(void)
 								
 			}
 
+			
 			timerTick = 0;
 			
 		}
@@ -383,6 +374,12 @@ void execute_command(char command)
 		
 		Uart::send(st);
 		
+		Uart::send(", \"last_error\":");
+		
+		itoa(get_last_error(), st, 10);
+		
+		Uart::send(st);
+		
 		Uart::send("}\r\n");
 		
 	}
@@ -402,27 +399,28 @@ void clear_temperature_data()
 	}
 	
 }
-
+// Утверждение нового значения только через 4 раза
 void get_temperature_data()
 {
 	
 	clear_temperature_data();
 
-	for(int i = 0; i < SENSORS_COUNT; i++)
+	for(int i = 0; i < 1; i++)
 	{
-		for(int j = 0; j < TEMPERATURE_TRY_COUNTER; j++) 
+
+		float temperature = 0;
+		
+		if( DS18B20::get_temperature(0, &temperature) ) // address_sensor[i]
 		{
-			float temperature = 0;
-			if( DS18B20::get_temperature(address_sensor[i], &temperature) )
-			{
-				temperatures[i].value = temperature;
-				break;
-			}
-			else
-			{
-				show_error(ERROR_TEMPERATURE_SENSORS_GET_MEASURE_FAILURE);
-			}
+			temperatures[i].value    = temperature;
+			temperatures[i].isActual = true;
 		}
+		else
+		{
+			temperatures[i].isActual = false;
+			show_error(ERROR_TEMPERATURE_SENSORS_GET_MEASURE_FAILURE);
+		}
+
 	}
 	
 }
