@@ -13,12 +13,12 @@ print("Serial ok")
 
 def testThermal(name, telemetryJson):
     if name in telemetryJson:
-        print("---->",telemetryJson["t0"])
-        if (telemetryJson[name] < 20) or (telemetryJson["t0"] > 30):
+        print("---->",telemetryJson[name])
+        if (telemetryJson[name] < 20) or (telemetryJson[name] > 30):
             print("ERRROR!!!!!")
             exit(-1)
         else:
-            print("T0 - ",telemetryJson["t0"])
+            print("T0 - ",telemetryJson[name])
     else:
         print("Temperature ERROR")
         exit(-1)
