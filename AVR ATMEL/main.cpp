@@ -105,14 +105,14 @@ int main(void)
 	
 	sei();
 	
-	set_sleep_mode(SLEEP_MODE_IDLE);
+	//set_sleep_mode(SLEEP_MODE_IDLE);
 	
-	sleep_enable();
+	//sleep_enable();
 	
 	while(1)
 	{
 	
-		sleep_cpu();
+		//sleep_cpu();
 
 		if( timerTick )
 		{
@@ -445,9 +445,9 @@ void send_state(bool state, const char * const description) // 1 - ok, 0 - error
 void init_digital_pins()
 {
 	
-	DIGITAL_SENSORS_DDR  &= ~((1<<DIGITAL_SENSORS_PIN_0)|(1<<DIGITAL_SENSORS_PIN_1)|(1<<DIGITAL_SENSORS_PIN_2));
+	DIGITAL_SENSORS_DDR  &= ~((1<<DIGITAL_SENSORS_PIN_0)|(1<<DIGITAL_SENSORS_PIN_1)|(1<<DIGITAL_SENSORS_PIN_2)|(1<<DIGITAL_SENSORS_PIN_3)|(1<<DIGITAL_SENSORS_PIN_4));
 	
-	DIGITAL_SENSORS_PORT &= ~((1<<DIGITAL_SENSORS_PIN_0)|(1<<DIGITAL_SENSORS_PIN_1)|(1<<DIGITAL_SENSORS_PIN_2));
+	DIGITAL_SENSORS_PORT &= ~((1<<DIGITAL_SENSORS_PIN_0)|(1<<DIGITAL_SENSORS_PIN_1)|(1<<DIGITAL_SENSORS_PIN_2)|(1<<DIGITAL_SENSORS_PIN_3)|(1<<DIGITAL_SENSORS_PIN_4));
 	
 }
 
@@ -641,6 +641,24 @@ void send_telemetry()
 	else
 	{
 		strcat(tempDiv, "\"d2\":0,");
+	}
+	
+	if( DIGITAL_SENSORS_PIN & (1<<DIGITAL_SENSORS_PIN_3) )
+	{
+		strcat(tempDiv, "\"d3\":1,");
+	}
+	else
+	{
+		strcat(tempDiv, "\"d3\":0,");
+	}
+	
+	if( DIGITAL_SENSORS_PIN & (1<<DIGITAL_SENSORS_PIN_4) )
+	{
+		strcat(tempDiv, "\"d4\":1,");
+	}
+	else
+	{
+		strcat(tempDiv, "\"d4\":0,");
 	}
 	
 	Uart::send(tempDiv);
