@@ -1,6 +1,6 @@
 In the process of development...
 
-Program for arduino nano provides a uart bridge to control relay and get voltages, digital states and temperature data from several DS18B20 
+Program for arduino nano provides a uart bridge to control relay and get voltages, digital states, and temperature data from several DS18B20 
 
 Program also does not allow relays(control[0-4] pins) to be turned on too often(to prevent equipment from breaking down).
 This is done by setting a delay before switching on separately for each channel. Switching off is implemented immediately.
