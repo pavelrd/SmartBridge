@@ -22,10 +22,12 @@ void init_error_messaging()
 	
 */
 
-void show_error( enum ERROR_TYPE error )
-{
+static ERROR_TYPE lastError = ERROR_NOERROR;
 
+void show_error( ERROR_TYPE error )
+{
 	ERROR_PORT |= (1<<ERROR_LED);
+	lastError = error;
 }
 
 static uint8_t  lastReset = 0;
@@ -77,4 +79,9 @@ uint8_t get_last_reset_reasons()
 uint32_t get_reset_counter()
 {
 	return resetCounter;
+}
+
+ERROR_TYPE get_last_error()
+{
+	return lastError;
 }

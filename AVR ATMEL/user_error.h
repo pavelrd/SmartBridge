@@ -13,6 +13,7 @@
 
 enum ERROR_TYPE
 {
+	ERROR_NOERROR = 1,
 	ERROR_TEMPERATURE_SENSORS_RESET_FAILURE,
 	ERROR_TEMPERATURE_SENSORS_GET_MEASURE_FAILURE,
 	ERROR_RESET_JTAG,
@@ -25,12 +26,14 @@ enum ERROR_TYPE
 
 void init_error_messaging();
 
-void show_error( enum ERROR_TYPE error );
+void show_error( ERROR_TYPE error );
 
 void check_reset_state();
 
 uint8_t get_last_reset_reasons();
 
 uint32_t get_reset_counter();
+
+ERROR_TYPE get_last_error();
 
 #endif /* USER_ERROR_H_ */
