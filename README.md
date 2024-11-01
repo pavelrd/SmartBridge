@@ -54,9 +54,7 @@ Command - '1', '2', '3', '4', '5' - connect certain pin to VCC(set 1 state)
 
 Success response: 
 
-
 {"state":"ok","message":"on pin ok"}\r\n'
-
 
 Bad responses:
 
@@ -71,7 +69,9 @@ Bad responses:
 
 Command - 'q', 'w', 'e', 'r', 't' - connect certain pin to VCC(set 0 state)
 
-Success response: {"state":"ok","message":"off pin ok"}\r\n'
+Success response: 
+
+{"state":"ok","message":"off pin ok"}\r\n'
 
 Bad responses:     
 
