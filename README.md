@@ -7,10 +7,15 @@ This is done by setting a delay before switching on separately for each channel.
 
 
 For control[0-2] minimum interval between on is 20 second
+
 For control[3-4] minimum interval between on is 180 second
+
 For adc[0-7] multiplier for output is 1, show voltage as is
+
 Sensors number is 1, address not used. Get temperature without use address.
+
 Control names in json file is in c[0-4]
+
 
 This paratemets can be changed in file AVR_ATMEL/pins.h
 
