@@ -488,7 +488,7 @@ uint8_t get_adc_value(uint8_t i)
 
 void init_adc()
 {
-	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (0<<ADPS1) | (0<<ADPS0);
+	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
 }
 
 static char tempDiv[24] = {0};
