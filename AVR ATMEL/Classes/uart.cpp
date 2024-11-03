@@ -49,12 +49,12 @@ void Uart :: init(bool isProgram_, SPEED speed )
 		
 		if(speed == BAUD_115200)
 		{
-			value  = 10;
+			value  = 16;
 			UCSR0A |= (1<<U2X0); // double speed	
 		}
 		else if (speed == BAUD_9600)
 		{
-			value = 64; // (F_CPU / ((uint32_t)16*9600) ) - 1;
+			value = 103; // (F_CPU / ((uint32_t)16*9600) ) - 1;
 		}
 		else 
 		{
@@ -194,7 +194,7 @@ void Uart :: send (uint64_t byteToSend)
 	}
 }
 
-ISR(USART_RXC_vect)
+ISR(USART_RX_vect)
 {
 	bufferValue  = UDR0;
 	byteRecieved = true;

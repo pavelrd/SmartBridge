@@ -79,9 +79,11 @@ void unsignedIntegerToString( char *str, uint32_t num );
 void init_digital_pins();
 
 // 15,4 кбит/с. 1925 кб сек
-// C:/MicrocontrollerLibrary/utilites/avrdude-v7.2-windows-x64/avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"C:/Users/user/Desktop/Для github/SmartBridge/AVR ATMEL/Release/SmartBridge.hex":i
+// C:/MicrocontrollerLibrary/utilites/avrdude-v7.2-windows-x64/avrdude.exe -c usbasp -p m328p -B 125kHz -U flash:w:"C:/Users/user/Desktop/Для github/SmartBridge/AVR ATMEL/Release/SmartBridge.hex":i
 int main(void)
 {
+	
+	init_error_messaging();
 
 	check_reset_state();
 			
@@ -92,8 +94,6 @@ int main(void)
 	init_control_pins();
 	
 	init_digital_pins();
-	
-	init_error_messaging();
 		
 	DS18B20::init_temp(TEMPERATURE_PIN_0);
 	
