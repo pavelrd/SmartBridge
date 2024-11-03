@@ -22,13 +22,28 @@ This paratemets can be changed in file AVR_ATMEL/pins.h
 
 Connection circuit:
 
-![image](https://github.com/user-attachments/assets/4f47a603-d2b1-42dd-b7e9-972971a49ad5)
+![image](https://github.com/user-attachments/assets/155fd41b-09dc-4202-8deb-c40bc7e3bdc5)
+
 
 Python telegram bot:
 
-Programming:
+Programming with arduino:
 
-avrdude.exe -c usbasp -p m328 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
+[Coming soon]
+
+Programming without arduino:
+
+  Programming fuses:
+  
+    avrdude.exe -c usbasp -p m328p -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
+  
+  Main program:
+  
+  avrdude.exe -c usbasp -p m328p -B 125kHz -U flash:w:"SmartBridgeWithoutArduinoBootloader.hex":i
+
+Programmer: https://aliexpress.ru/wholesale?SearchText=usbasp --- need 10 pin to 6 pin adapter
+              
+Avrdude: https://github.com/avrdudes/avrdude
 
 Protocol:
 
