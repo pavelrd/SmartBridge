@@ -39,7 +39,7 @@ Programming without arduino:
   
   Main program:
   
-  avrdude.exe -c usbasp -p m16 -B 125kHz -U flash:w:"SmartBridgeWithoutArduinoBootloader.hex":i
+  avrdude.exe -c usbasp -p m328p -B 125kHz -U flash:w:"SmartBridgeWithoutArduinoBootloader.hex":i
 
 Programmer: https://aliexpress.ru/wholesale?SearchText=usbasp --- need 10 pin to 6 pin adapter
               
