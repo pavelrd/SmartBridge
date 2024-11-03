@@ -35,7 +35,7 @@ Programming without arduino:
 
   Programming fuses:
   
-    avrdude.exe -c usbasp -p m328 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
+    avrdude.exe -c usbasp -p m328p -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m 
   
   Main program:
   
