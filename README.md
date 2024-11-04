@@ -24,14 +24,15 @@ Connection circuit:
 
 ![image](https://github.com/user-attachments/assets/155fd41b-09dc-4202-8deb-c40bc7e3bdc5)
 
-
+<hr>
 Python telegram bot:
 
-Programming with arduino:
+<hr>
+<b>Programming with arduino</b>:
 
 [Coming soon]
 
-Programming without arduino:
+<b>Programming without arduino</b>:
 
   Programming fuses:
   
@@ -39,7 +40,7 @@ Programming without arduino:
   
   Main program:
   
-  avrdude.exe -c usbasp -p m328p -B 125kHz -U flash:w:"SmartBridgeWithoutArduinoBootloader.hex":i
+    avrdude.exe -c usbasp -p m328p -B 125kHz -U flash:w:"SmartBridgeWithoutArduinoBootloader.hex":i
 
 Programmer: https://aliexpress.ru/wholesale?SearchText=usbasp --- need 10 pin to 6 pin adapter
               
