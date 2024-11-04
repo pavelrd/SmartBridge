@@ -467,7 +467,7 @@ void init_timer()
 	TCCR1A = 0;
 	TCCR1B = (1<<WGM12) | (1<<CS12) | (1<<CS10) | (0<<CS11); // /1024
 	
-	TIMSK0 |= (1<<OCIE1A);
+	TIMSK1 |= (1<<OCIE1A);
 }
 
 uint8_t get_adc_value(uint8_t i)
