@@ -45,33 +45,36 @@ Programmer: https://aliexpress.ru/wholesale?SearchText=usbasp --- need 10 pin to
               
 Avrdude: https://github.com/avrdudes/avrdude
 
-Protocol:
+<hr>
 
-UART, baudrate - 9600
+<b>Protocol</b>: UART, baudrate - 9600
 
-Command  - 'g' - get all pin and sensors state
+<hr>
 
-Response example(without ds18b20 connected): 
+<b>Command</b>: 'g' - get all pin and sensors state
+
+<b>Response example(without ds18b20 connected)</b>: 
 
 
 {'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, 'd4': 0, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
 {'crc': 12345 }\r\n
 
 
-Response example(with 5 DS18B20 connected):
+<b>Response example(with 5 DS18B20 connected)</b>:
 
 
 {'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 't0' : 22.1, 't1' : 22.2, 't2' : 22.3, 't3' : 22.7, 't4' : 22.1, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
 {'crc': 12345 }\r\n
 
+<hr>
 
-Command - '1', '2', '3', '4', '5' - connect certain pin to VCC(set 1 state)
+<b>Command</b> : '1', '2', '3', '4', '5' - connect certain pin to VCC(set 1 state)
 
-Success response: 
+<b>Success response</b>: 
 
 {"state":"ok","message":"on pin ok"}\r\n'
 
-Bad responses:
+<b>Bad responses</b>:
 
                {"state":"error","message":"already on"}\r\n'     --- pin is already in on state
                
@@ -81,14 +84,14 @@ Bad responses:
                
                {"state":"error","message":"shorted to GND"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
                
+<hr>
+<b>Command</b> : 'q', 'w', 'e', 'r', 't' - connect certain pin to GND(set 0 state)
 
-Command - 'q', 'w', 'e', 'r', 't' - connect certain pin to GND(set 0 state)
-
-Success response: 
+<b>Success response</b>: 
 
 {"state":"ok","message":"off pin ok"}\r\n'
 
-Bad responses:     
+<b>Bad responses</b>:     
 
 
                {"state":"error","message":"already off"}\r\n'    --- pin is already in off state
