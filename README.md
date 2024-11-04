@@ -22,7 +22,7 @@ This paratemets can be changed in file AVR_ATMEL/pins.h
 
 Connection circuit:
 
-![image](https://github.com/user-attachments/assets/e9345ee4-4d4a-4c77-b45d-821273d730dd)
+![image](https://github.com/user-attachments/assets/fc1f21a0-270d-48cd-9ecc-748be6d41956)
 
 <hr>
 Python telegram bot:
