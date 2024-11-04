@@ -55,16 +55,11 @@ Avrdude: https://github.com/avrdudes/avrdude
 
 <b>Response example(without ds18b20 connected)</b>: 
 
-
-{'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, 'd4': 0, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
-{'crc': 12345 }\r\n
-
+               {"vent":0,"heat":0,"light":1,"res0":1,"res1":0,"res2":1,"d0":0,"d1":0,"d2":0,"adc0": 0.00,"adc1": 0.00,"adc2": 0.16,"adc3": 0.00,"adc4": 0.00,"adc5": 0.00,"adc6": 0.00,"adc7": 0.00}\r\n{'crc': 4236205978}\r\n
 
 <b>Response example(with 5 DS18B20 connected)</b>:
 
-
-{'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 't0' : 22.1, 't1' : 22.2, 't2' : 22.3, 't3' : 22.7, 't4' : 22.1, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
-{'crc': 12345 }\r\n
+               {"vent":0,"heat":0,"light":0,"res0":1,"res1":0,"res2":1,"t0":26.75,"t1":26.75,"t2":26.94,"t3":26.88,"t4":58.19,"d0":0,"d1":1,"d2":1,"adc0": 0.00,"adc1": 0.00,"adc2": 0.16,"adc3": 0.00,"adc4": 0.00,"adc5": 0.00,"adc6": 0.00,"adc7": 0.00}\r\n{'crc': 288843757}\r\n
 
 <hr>
 
@@ -72,7 +67,7 @@ Avrdude: https://github.com/avrdudes/avrdude
 
 <b>Success response</b>: 
 
-{"state":"ok","message":"on pin ok"}\r\n'
+               {"state":"ok","message":"on pin ok"}\r\n'
 
 <b>Bad responses</b>:
 
@@ -89,7 +84,7 @@ Avrdude: https://github.com/avrdudes/avrdude
 
 <b>Success response</b>: 
 
-{"state":"ok","message":"off pin ok"}\r\n'
+               {"state":"ok","message":"off pin ok"}\r\n'
 
 <b>Bad responses</b>:     
 
@@ -105,8 +100,8 @@ Avrdude: https://github.com/avrdudes/avrdude
 
 <b>Success response</b>: 
 
-{'last_reset_reasons': 1, 'reset_counter': 0, 'last_error': 1}\r\n'
+               {'last_reset_reasons': 1, 'reset_counter': 0, 'last_error': 1}\r\n
 
 <b>Bad responses(example)</b>:     
 
-               {'last_reset_reasons': 8, 'reset_counter': 5, 'last_error': 4}
+               {'last_reset_reasons': 8, 'reset_counter': 5, 'last_error': 4}\r\n
