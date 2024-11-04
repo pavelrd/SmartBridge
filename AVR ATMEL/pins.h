@@ -38,15 +38,15 @@
 // Number of ADC channels scan, scan started of PC0(ADC0)
 #define ADC_CHANNELS 8 // PC0-PC8
 
-// ADC multiplier if voltage divider used
-#define ADC_0_MULTIPLIER 1
-#define ADC_1_MULTIPLIER 1
-#define ADC_2_MULTIPLIER 1
-#define ADC_3_MULTIPLIER 1
-#define ADC_4_MULTIPLIER 1
-#define ADC_5_MULTIPLIER 1
-#define ADC_6_MULTIPLIER 1
-#define ADC_7_MULTIPLIER 1
+// ADC multiplier if voltage divider used. 0.018 divider for 4.7V voltage
+#define ADC_0_MULTIPLIER 0.018
+#define ADC_1_MULTIPLIER 0.018
+#define ADC_2_MULTIPLIER 0.018
+#define ADC_3_MULTIPLIER 0.018
+#define ADC_4_MULTIPLIER 0.018
+#define ADC_5_MULTIPLIER 0.018
+#define ADC_6_MULTIPLIER 0.018
+#define ADC_7_MULTIPLIER 0.018
 
 // Port for didital scan
 #define DIGITAL_SENSORS_PORT PORTB
