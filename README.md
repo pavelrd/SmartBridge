@@ -99,4 +99,14 @@ Avrdude: https://github.com/avrdudes/avrdude
                {"state":"error","message":"pin corrupted"}\r\n'  --- pin corrupted, on or off command has no effect and pin was disabled
                
                {"state":"error","message":"shorted to VCC"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
-               
+
+<hr>
+<b>Command</b> : 'a' - get error state, number of reboots
+
+<b>Success response</b>: 
+
+{'last_reset_reasons': 1, 'reset_counter': 0, 'last_error': 1}\r\n'
+
+<b>Bad responses(example)</b>:     
+
+               {'last_reset_reasons': 8, 'reset_counter': 5, 'last_error': 4}
