@@ -82,7 +82,7 @@ Bad responses:
                {"state":"error","message":"shorted to GND"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
                
 
-Command - 'q', 'w', 'e', 'r', 't' - connect certain pin to VCC(set 0 state)
+Command - 'q', 'w', 'e', 'r', 't' - connect certain pin to GND(set 0 state)
 
 Success response: 
 
