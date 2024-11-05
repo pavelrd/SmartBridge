@@ -471,27 +471,25 @@ void init_timer()
 
 uint8_t get_adc_value(uint8_t i)
 {
-			
-	ADMUX = (1<<ADLAR) | i;
 
-	ADCSRA |= 1<<ADEN;
+	ADMUX = (1<<ADLAR) | i;
 
 	ADCSRA |= (1<<ADSC);
 	
-	while( ! ( ADCSRA & ADIF ) )
+	while( !( ADCSRA & (1<<ADIF) ) )
 	{}
-	
+		
 	uint8_t adc_result = ADCH;
 	
-	ADCSRA &= ~(1<<ADEN);
-	
+	ADCSRA |= (1<<ADIF);
+
 	return adc_result;
 	
 }
 
 void init_adc()
 {
-	ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
+	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
 }
 
 static char tempDiv[24] = {0};
