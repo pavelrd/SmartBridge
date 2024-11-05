@@ -484,7 +484,7 @@ void init_adc()
 	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
 }
 
-static char tempDiv[24] = {0};
+static char tempDiv[64] = {0};
 
 void send_telemetry()
 {
