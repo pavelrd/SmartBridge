@@ -8,7 +8,6 @@
 
 #include "uart.h"
 #include "temp.h"
-#include "led.h"
  
 #include "pins.h"
 #include "user_types.h"
@@ -472,9 +471,11 @@ void init_timer()
 
 uint8_t get_adc_value(uint8_t i)
 {
-	
+			
 	ADMUX = (1<<ADLAR) | i;
-	
+
+	ADCSRA |= 1<<ADEN;
+
 	ADCSRA |= (1<<ADSC);
 	
 	while( ! ( ADCSRA & ADIF ) )
@@ -482,13 +483,15 @@ uint8_t get_adc_value(uint8_t i)
 	
 	uint8_t adc_result = ADCH;
 	
+	ADCSRA &= ~(1<<ADEN);
+	
 	return adc_result;
 	
 }
 
 void init_adc()
 {
-	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
+	ADCSRA = (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
 }
 
 static char tempDiv[24] = {0};
