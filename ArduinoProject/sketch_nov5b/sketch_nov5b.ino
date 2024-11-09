@@ -84,10 +84,10 @@ void setup()
 	init_error_messaging();
 
 	check_reset_state();
-			
-	//WDTCSR = WDTCSR | (1<<WDCE) | (1<<WDE);
-		
-	//WDTCSR = (1<<WDE) | (1<<WDIE) | (1<<WDP2) | (1<<WDP1) | (1<<WDP0);
+	
+	wdt_reset();
+
+	wdt_enable(WDTO_2S); // WDTO_4S WDTO_8S
 	
 	init_control_pins();
 	
