@@ -22,16 +22,17 @@ This paratemets can be changed in file AVR_ATMEL/pins.h
 
 Connection circuit:
 
-![image](https://github.com/user-attachments/assets/155fd41b-09dc-4202-8deb-c40bc7e3bdc5)
+![image](https://github.com/user-attachments/assets/fc1f21a0-270d-48cd-9ecc-748be6d41956)
 
-
+<hr>
 Python telegram bot:
 
-Programming with arduino:
+<hr>
+<b>Programming with arduino</b>:
 
 [Coming soon]
 
-Programming without arduino:
+<b>Programming without arduino</b>:
 
   Programming fuses:
   
@@ -39,39 +40,37 @@ Programming without arduino:
   
   Main program:
   
-  avrdude.exe -c usbasp -p m328p -B 125kHz -U flash:w:"SmartBridgeWithoutArduinoBootloader.hex":i
+    avrdude.exe -c usbasp -p m328p -B 125kHz -U flash:w:"SmartBridgeWithoutArduinoBootloader.hex":i
 
 Programmer: https://aliexpress.ru/wholesale?SearchText=usbasp --- need 10 pin to 6 pin adapter
               
 Avrdude: https://github.com/avrdudes/avrdude
 
-Protocol:
+<hr>
 
-UART, baudrate - 9600
+<b>Protocol</b>: UART, baudrate - 9600
 
-Command  - 'g' - get all pin and sensors state
+<hr>
 
-Response example(without ds18b20 connected): 
+<b>Command</b>: 'g' - get all pin and sensors state
 
+<b>Response example(without ds18b20 connected)</b>: 
 
-{'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, 'd4': 0, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
-{'crc': 12345 }\r\n
+               {"c0":0,"c1":0,"c2":1,"c3":1,"c4":0,"c5":1,"d0":0,"d1":0,"d2":0,"d3":0,"d4":0"adc0": 0.00,"adc1": 0.00,"adc2": 0.16,"adc3": 0.00,"adc4": 0.00,"adc5": 0.00,"adc6": 0.00,"adc7": 0.00}\r\n{'crc': 4236205978}\r\n
 
+<b>Response example(with 5 DS18B20 connected)</b>:
 
-Response example(with 5 DS18B20 connected):
+               {"c0":0,"c1":0,"c2":0,"c3":1,"c4":0,"c5":1,"t0":26.75,"t1":26.75,"t2":26.94,"t3":26.88,"t4":58.19,"d0":0,"d1":1,"d2":1,"d3":0,"d4":0"adc0": 0.00,"adc1": 0.00,"adc2": 0.16,"adc3": 0.00,"adc4": 0.00,"adc5": 0.00,"adc6": 0.00,"adc7": 0.00}\r\n{'crc': 288843757}\r\n
 
+<hr>
 
-{'c0': 0, 'c1': 0, 'c2': 0, 'c3': 0, 'c4': 0, 't0' : 22.1, 't1' : 22.2, 't2' : 22.3, 't3' : 22.7, 't4' : 22.1, 'd0': 1, 'd1': 0, 'd2': 1, 'd3' : 1, adc0': 0.31, 'adc1': 0.0, 'adc2': 0.08, 'adc3': 0.0, 'adc4': 0.0, 'adc5': 0.0, 'adc6': 0.0, 'adc7': 0.0}\r\n
-{'crc': 12345 }\r\n
+<b>Command</b> : '1', '2', '3', '4', '5' - connect certain pin to VCC(set 1 state)
 
+<b>Success response</b>: 
 
-Command - '1', '2', '3', '4', '5' - connect certain pin to VCC(set 1 state)
+               {"state":"ok","message":"on pin ok"}\r\n'
 
-Success response: 
-
-{"state":"ok","message":"on pin ok"}\r\n'
-
-Bad responses:
+<b>Bad responses</b>:
 
                {"state":"error","message":"already on"}\r\n'     --- pin is already in on state
                
@@ -81,14 +80,14 @@ Bad responses:
                
                {"state":"error","message":"shorted to GND"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
                
+<hr>
+<b>Command</b> : 'q', 'w', 'e', 'r', 't' - connect certain pin to GND(set 0 state)
 
-Command - 'q', 'w', 'e', 'r', 't' - connect certain pin to VCC(set 0 state)
+<b>Success response</b>: 
 
-Success response: 
+               {"state":"ok","message":"off pin ok"}\r\n'
 
-{"state":"ok","message":"off pin ok"}\r\n'
-
-Bad responses:     
+<b>Bad responses</b>:     
 
 
                {"state":"error","message":"already off"}\r\n'    --- pin is already in off state
@@ -96,4 +95,14 @@ Bad responses:
                {"state":"error","message":"pin corrupted"}\r\n'  --- pin corrupted, on or off command has no effect and pin was disabled
                
                {"state":"error","message":"shorted to VCC"}\r\n' --- command has no effect, pin leave GND state, pin was disabled for safety and mark as corrupted
-               
+
+<hr>
+<b>Command</b> : 'a' - get error state, number of reboots
+
+<b>Success response</b>: 
+
+               {'last_reset_reasons': 1, 'reset_counter': 0, 'last_error': 1}\r\n
+
+<b>Bad responses(example)</b>:     
+
+               {'last_reset_reasons': 8, 'reset_counter': 5, 'last_error': 4}\r\n
