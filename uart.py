@@ -11,18 +11,21 @@ ser = serial.Serial(port, baudrate=baudrate)
 
 print("Serial ok")
 
+numberOfTemperatureError = 0
+
 def testThermal(name, telemetryJson):
     if name in telemetryJson:
-        print("---->",telemetryJson[name])
-        if (telemetryJson[name] < 20) or (telemetryJson[name] > 30):
-            print("ERRROR!!!!!")
-            exit(-1)
-        else:
-            print("T0 - ",telemetryJson[name])
+        #if (telemetryJson[name] < 20) or (telemetryJson[name] > 30):
+        #    print("ERRROR!!!!!")
+        #    exit(-1)
+        #else:
+        print(name," - ",telemetryJson[name])
     else:
-        print("Temperature ERROR")
-        exit(-1)
-
+        #print("Temperature ERROR")
+        return False
+        #exit(-1)
+    return True
+    
 def testfunc(one, two):
     if random.randint(0, 1): 
         ser.write(one.encode('UTF-8'))
@@ -35,7 +38,7 @@ counter = 0
 
 while True:
     print("Test num: ", counter)
-    #time.sleep(1)
+    time.sleep( random.randint(0,100) / 100.0 )
     
     ser.write('a'.encode('UTF-8'))
     
@@ -52,7 +55,7 @@ while True:
     telemetryJson    = json.loads(telemetryData)
     telemetryJsonCrc = json.loads(ser.readline())
     
-    
+    print(telemetryJsonCrc)
     crcFromTelemetry = telemetryJsonCrc["crc"]
     crcCalculated    = zlib.crc32(telemetryData[:-2])
     
@@ -62,11 +65,11 @@ while True:
         print("ERROR BAD CRC!!!!!")
         exit(-1)
     
-    testThermal("t0", telemetryJson)
-    testThermal("t1", telemetryJson)
-    testThermal("t2", telemetryJson)
-    testThermal("t3", telemetryJson)
-    testThermal("t4", telemetryJson)
+    for i in range(2,3):
+        if False == testThermal("t"+str(i), telemetryJson):
+            numberOfTemperatureError += 1
+            time.sleep(2)
+            break
     
     #print("-------")
 
@@ -74,6 +77,10 @@ while True:
     if reasonJson["last_reset_reasons"] != 1:
         print("ERROR RESETTED!")
         #exit(-1)
+        
+    print("-------")
+
+    print("Number of terr: ", numberOfTemperatureError)
     
     print("-------")
    

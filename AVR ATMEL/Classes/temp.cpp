@@ -54,13 +54,16 @@ void DS18B20 :: write_bit(uint8_t bit)
 	switch(bit)
 	{
 		case 0: asm("cli"); TEMPERATURE_DDR |= 1 << pinNumber; _delay_us(60); TEMPERATURE_DDR &= ~(1 << pinNumber); asm("sei"); break;
-		case 1: asm("cli"); TEMPERATURE_DDR |= 1 << pinNumber; _delay_us(15); TEMPERATURE_DDR &= ~(1 << pinNumber); _delay_us(45); asm("sei"); break;
+		case 1: asm("cli"); TEMPERATURE_DDR |= 1 << pinNumber; _delay_us(10); TEMPERATURE_DDR &= ~(1 << pinNumber); _delay_us(50); asm("sei"); break;
 	}
 	_delay_us(5);
 }
 
 void DS18B20 :: write_byte (uint8_t byte)
 {
+	
+	_delay_us(10);
+	
 	for(int i = 0; i < 8; i++)
 	{
 		// (byte & 0x01) ? write_bit(1) : write_bit(0);
@@ -80,9 +83,9 @@ uint8_t DS18B20 :: read_bit()
 {
 	asm("cli");
 	TEMPERATURE_DDR |= 1 << pinNumber;
-	_delay_us(2);
+	_delay_us(3);
 	TEMPERATURE_DDR &= ~(1 << pinNumber);
-	_delay_us(4);
+	_delay_us(8);
 	
 	if(TEMPERATURE_PIN & 1 << pinNumber)
 	{
@@ -100,6 +103,9 @@ uint8_t DS18B20 :: read_bit()
 
 uint8_t DS18B20 :: read_byte()
 {
+	
+	_delay_us(10);
+	
 	uint8_t read_byte = 0;
 	
 	for(int i = 0; i < 8; i++)
